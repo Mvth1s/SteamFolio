@@ -3,7 +3,6 @@
  * Handles all Steam API calls including vanity URL resolution and player data fetching
  */
 
-const apiKey = import.meta.env.VITE_STEAM_API_KEY
 const proxyPrefix = import.meta.env.VITE_STEAM_PROXY_PREFIX ?? 'https://corsproxy.io/?'
 
 /**
@@ -21,12 +20,14 @@ export class SteamApiError extends Error {
 }
 
 /**
- * Validate that the API key is configured
+ * Get the API key from environment, only when needed
  */
-function validateApiKey(): void {
+function getApiKey(): string {
+  const apiKey = import.meta.env.VITE_STEAM_API_KEY
   if (!apiKey) {
     throw new SteamApiError('VITE_STEAM_API_KEY is missing. Check your .env file.')
   }
+  return apiKey
 }
 
 /**
@@ -46,7 +47,7 @@ async function fetchSteamApi<T>(
   endpoint: string,
   params: Record<string, string> = {},
 ): Promise<T> {
-  validateApiKey()
+  const apiKey = getApiKey()
 
   const queryParams = new URLSearchParams({
     key: apiKey,
@@ -144,7 +145,7 @@ export async function getPlayerSummary(steamId: string): Promise<{
     return null
   }
 
-  return data.response.players[0] ?? null
+  return data.response.players[0]!
 }
 
 /**
