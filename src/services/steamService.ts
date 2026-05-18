@@ -140,12 +140,14 @@ export async function getPlayerSummary(steamId: string): Promise<{
     steamids: steamId,
   })
 
-  // Check if array has elements before accessing index
-  if (!data.response.players || data.response.players.length === 0) {
+  // Check if array has elements before accessing
+  const players = data.response.players
+  if (!players || players.length === 0) {
     return null
   }
 
-  return data.response.players[0]!
+  const [player] = players
+  return player ?? null
 }
 
 /**
