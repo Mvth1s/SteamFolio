@@ -4,6 +4,11 @@ import { getOwnedGames, getPlayerAchievements } from '@/services/steamApi'
 import type { SteamAchievement, SteamOwnedGame } from '@/types/steam'
 
 const games = ref<SteamOwnedGame[]>([])
+const ACHIEVEMENT_UNLOCKED: SteamAchievement['achieved'] = 1
+
+function isAchievementUnlocked(achievement: SteamAchievement): boolean {
+  return achievement.achieved === ACHIEVEMENT_UNLOCKED
+}
 const selectedGameId = ref<number | null>(null)
 const achievements = ref<SteamAchievement[]>([])
 const loadingGames = ref(true)
@@ -15,7 +20,7 @@ const completion = computed(() => {
     return 0
   }
 
-  const unlockedCount = achievements.value.filter((achievement) => achievement.achieved === 1).length
+  const unlockedCount = achievements.value.filter((achievement) => isAchievementUnlocked(achievement)).length
   return Math.round((unlockedCount / achievements.value.length) * 100)
 })
 
@@ -88,8 +93,8 @@ watch(selectedGameId, (appId) => {
         >
           <p class="font-medium text-slate-100">{{ achievement.name ?? achievement.apiname }}</p>
           <p class="text-sm text-slate-300">{{ achievement.description ?? 'No description provided.' }}</p>
-          <p class="text-xs" :class="achievement.achieved ? 'text-emerald-300' : 'text-slate-400'">
-            {{ achievement.achieved ? 'Unlocked' : 'Locked' }}
+          <p class="text-xs" :class="isAchievementUnlocked(achievement) ? 'text-emerald-300' : 'text-slate-400'">
+            {{ isAchievementUnlocked(achievement) ? 'Unlocked' : 'Locked' }}
           </p>
         </li>
       </ul>
