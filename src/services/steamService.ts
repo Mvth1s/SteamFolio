@@ -147,8 +147,7 @@ export async function getPlayerSummary(steamId: string): Promise<{
   }
 
   const [player] = players
-  // TypeScript requires explicit null return for type compatibility
-  return player ?? null
+  return player!
 }
 
 /**
