@@ -139,12 +139,12 @@ export async function getPlayerSummary(steamId: string): Promise<{
     steamids: steamId,
   })
 
-  const player = data.response.players[0]
-  if (!player) {
+  // Check if array has elements before accessing index
+  if (!data.response.players || data.response.players.length === 0) {
     return null
   }
 
-  return player
+  return data.response.players[0] ?? null
 }
 
 /**

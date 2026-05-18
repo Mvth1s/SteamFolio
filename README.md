@@ -65,9 +65,11 @@ VITE_STEAM_PROXY_PREFIX=https://corsproxy.io/?
 
 > `VITE_STEAM_PROXY_PREFIX` is used to avoid browser CORS restrictions when calling the Steam API directly from the client.
 >
-> To find your Steam Vanity URL: visit your Steam profile and look at the URL. It's the custom username (e.g., `/id/Mvtos`).
+> **For VITE_STEAM_VANITY_URL**: Use only the username portion from your Steam profile URL. For example, if your profile URL is `https://steamcommunity.com/id/Mvtos`, use `Mvtos` (not `/id/Mvtos`).
 >
-> To find your SteamID64: visit [https://steamcommunity.com/profiles/](https://steamcommunity.com/profiles/) or use the ResolveVanityURL endpoint.
+> **To find your Steam Vanity URL**: Visit your Steam profile and look at the custom URL (usually in the format `/id/username`). Use only the `username` part.
+>
+> **To find your SteamID64**: Visit [https://steamcommunity.com/profiles/](https://steamcommunity.com/profiles/) or use the ResolveVanityURL endpoint with your vanity URL.
 
 ### 4) Run the app
 
