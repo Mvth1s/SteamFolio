@@ -87,7 +87,7 @@ If you run CI with GitHub Actions, add these repository secrets so the workflow 
 - `VITE_STEAM_VANITY_URL`
 - `VITE_STEAM_ID`
 
-The workflow creates a temporary `.env` file during CI from these secrets before lint, tests, and build steps run.
+The workflow injects these values into the CI job environment and validates they are present (except for forked pull requests where secrets are unavailable).
 
 ## Folder structure
 
