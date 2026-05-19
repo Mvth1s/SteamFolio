@@ -1,0 +1,56 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+npm run dev          # start dev server (Vite)
+npm run build        # type-check + production build
+npm run lint         # run Oxlint then ESLint (both with --fix)
+npm run test:unit -- --run   # run unit tests once (no watch)
+npm run test:unit    # run unit tests in watch mode
+npm run preview      # preview production build locally
+```
+
+## Environment variables
+
+Copy `.env.example` to `.env` before running locally:
+
+```
+VITE_STEAM_API_KEY=    # Steam Web API key
+VITE_STEAM_VANITY_URL= # username portion only (e.g. "Mvtos", not "/id/Mvtos")
+VITE_STEAM_ID=         # SteamID64
+```
+
+## Architecture
+
+### Request flow
+
+All Steam API calls go through a server-side proxy, never directly from the browser:
+
+```
+Browser → /api/steam?steamEndpoint=<path>&...params → api/steam.js → api.steampowered.com
+```
+
+`api/steam.js` is a Vercel Serverless Function. It reads the API key from `process.env.STEAM_API_KEY` (or `VITE_STEAM_API_KEY` as fallback), appends it to the upstream request, and forwards the response. The `steamEndpoint` query param selects which Steam API path to call (e.g. `ISteamUser/GetPlayerSummaries/v2/`).
+
+### Frontend layers
+
+- **`src/services/steamApi.ts`** — all data-fetching functions; each call `fetchSteamApi()` which constructs the `/api/steam?steamEndpoint=...` request. `getFriendsSummary` is the exception (it calls `/api/steam` directly because it doesn't use `steamid`).
+- **`src/views/`** — one Vue component per route; fetches data on mount and renders it.
+- **`src/types/steam.ts`** — shared TypeScript interfaces for Steam API response shapes.
+- **`src/utils/steamFormatters.ts`** — pure formatting helpers (playtime, dates, sort/filter). Unit-tested in `src/utils/__tests__/steamFormatters.spec.ts`.
+- **`src/router/index.ts`** — four routes: `/profile`, `/library`, `/achievements`, `/friends` (root redirects to `/profile`).
+
+### Path alias
+
+`@` maps to `src/` (configured in `vite.config.ts`).
+
+### Linting
+
+Two linters run in sequence: Oxlint first (`lint:oxlint`), then ESLint (`lint:eslint`). The `eslint-plugin-oxlint` disables ESLint rules already covered by Oxlint to avoid conflicts. Both run with `--fix`.
+
+### Deployment
+
+Deployed on Vercel. `vercel.json` rewrites all non-`/api/` paths to `index.html` for SPA routing. On Vercel, set `STEAM_API_KEY` (without the `VITE_` prefix) as a server-side env var to avoid exposing it to the client bundle.
