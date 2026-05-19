@@ -9,7 +9,7 @@ import {
 } from '../steamApi'
 
 function mockFetch(body: unknown, status = 200) {
-  const mock = vi.fn<() => Promise<Response>>().mockResolvedValue(
+  const mock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>().mockResolvedValue(
     new Response(JSON.stringify(body), {
       status,
       headers: { 'content-type': 'application/json' },
@@ -99,7 +99,7 @@ describe('getFriendsSummary', () => {
     const ids = Array.from({ length: 150 }, (_, i) => String(i))
     const players = ids.map((id) => ({ steamid: id, personaname: id, avatarfull: '', personastate: 0, profileurl: '' }))
 
-    const mock = vi.fn<() => Promise<Response>>()
+    const mock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>()
     mock.mockResolvedValueOnce(new Response(JSON.stringify({ response: { players: players.slice(0, 100) } }), { status: 200, headers: { 'content-type': 'application/json' } }))
     mock.mockResolvedValueOnce(new Response(JSON.stringify({ response: { players: players.slice(100) } }), { status: 200, headers: { 'content-type': 'application/json' } }))
     vi.stubGlobal('fetch', mock)
