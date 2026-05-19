@@ -44,11 +44,12 @@ In development, a Vite plugin in `vite.config.ts` intercepts `/api/steam` reques
   - `getPlayerSummary` — uses `steamids` (plural), required by `GetPlayerSummaries/v2`
   - `getPlayerAchievements` — handles HTTP 400 gracefully (returns `[]` when a game has no achievement stats)
   - `getFriendsSummary` — batches friend IDs in chunks of 100 to respect the Steam API limit
+- **`src/composables/usePlayerSummary.ts`** — module-level cached promise for the player summary. `App.vue` and `ProfileView` both consume it so `getPlayerSummary` is only called once per page load.
 - **`src/views/`** — one Vue component per route; fetches data on `onMounted` and owns its `loading`/`error` state.
 - **`src/types/steam.ts`** — shared TypeScript interfaces for Steam API response shapes.
 - **`src/utils/steamFormatters.ts`** — pure formatting helpers (playtime, dates, status label, sort/filter, icon URL). Unit-tested in `src/utils/__tests__/steamFormatters.spec.ts`.
 - **`src/router/index.ts`** — four routes: `/profile`, `/library`, `/achievements`, `/friends` (root redirects to `/profile`).
-- **`src/App.vue`** — sets the browser favicon dynamically from the Steam profile avatar on mount.
+- **`src/App.vue`** — sets the browser favicon dynamically from the Steam profile avatar via `usePlayerSummary`.
 
 ### Path alias
 
