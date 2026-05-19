@@ -15,7 +15,7 @@ async function fetchSteamApi<T>(endpoint: string, params: Record<string, string>
 
   const queryParams = new URLSearchParams({
     steamid: id,
-    endpoint,
+    steamEndpoint: endpoint,
     ...params,
   })
 
@@ -57,7 +57,7 @@ export async function getFriendsSummary(friendIds: string[]): Promise<SteamPlaye
   }
 
   const queryParams = new URLSearchParams({
-    endpoint: 'ISteamUser/GetPlayerSummaries/v2/',
+    steamEndpoint: 'ISteamUser/GetPlayerSummaries/v2/',
     steamids: friendIds.join(','),
   })
 

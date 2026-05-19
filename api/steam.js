@@ -11,10 +11,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STEAM_API_KEY or VITE_STEAM_API_KEY is not configured' })
   }
 
-  const { endpoint, ...rawParams } = req.query
-  const endpointValue = Array.isArray(endpoint) ? endpoint[0] : endpoint
+  const { steamEndpoint, ...rawParams } = req.query
+  const endpointValue = Array.isArray(steamEndpoint) ? steamEndpoint[0] : steamEndpoint
   if (!endpointValue) {
-    return res.status(400).json({ error: 'Missing endpoint query parameter' })
+    return res.status(400).json({ error: 'Missing steamEndpoint query parameter' })
   }
 
   const queryParams = new URLSearchParams({ key: apiKey, format: 'json' })
@@ -26,14 +26,20 @@ export default async function handler(req, res) {
   }
 
   const normalizedEndpoint = endpointValue.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
-  if (!/^[A-Za-z0-9/_-]+$/.test(normalizedEndpoint)) {
+  if (!/^[A-Za-z0-9/]+$/.test(normalizedEndpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint query parameter' })
   }
   const targetUrl = `${STEAM_API_BASE_URL}/${normalizedEndpoint}?${queryParams.toString()}`
 
   try {
     const response = await fetch(targetUrl)
-    const data = await response.json()
+    const contentType = response.headers.get('content-type') ?? ''
+    let data
+    if (contentType.includes('application/json')) {
+      data = await response.json()
+    } else {
+      data = { error: 'Steam API returned non-JSON response', body: await response.text() }
+    }
     return res.status(response.status).json(data)
   } catch (error) {
     console.error('Steam API proxy error:', error)
