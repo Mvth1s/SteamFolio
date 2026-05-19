@@ -78,7 +78,11 @@ describe('steam api proxy', () => {
     await handler(req, res)
 
     expect(res.statusCode).toBe(200)
+    expect(res.body).toEqual({ ok: true })
     expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [calledUrl] = fetchMock.mock.calls[0]
+    expect(calledUrl).toContain('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2?')
+    expect(calledUrl).toContain('steamid=76561198316121302')
   })
 
   it('keeps existing 400 behavior when endpoint is missing', async () => {
