@@ -11,7 +11,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STEAM_API_KEY or VITE_STEAM_API_KEY is not configured' })
   }
 
-  const { steamEndpoint, ...rawParams } = req.query
+  const normalizedQuery = Object.fromEntries(
+    Object.entries(req.query).map(([key, value]) => [key.replace(/^amp;/, ''), value]),
+  )
+
+  const { steamEndpoint, ...rawParams } = normalizedQuery
   const endpointValue = Array.isArray(steamEndpoint) ? steamEndpoint[0] : steamEndpoint
   if (!endpointValue) {
     return res.status(400).json({ error: 'Missing steamEndpoint query parameter' })
