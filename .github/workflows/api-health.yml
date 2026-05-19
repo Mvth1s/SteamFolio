@@ -1,0 +1,79 @@
+name: Steam API Health
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # every day at 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate secrets presence
+        env:
+          VITE_STEAM_API_KEY: ${{ secrets.VITE_STEAM_API_KEY }}
+          VITE_STEAM_ID: ${{ secrets.VITE_STEAM_ID }}
+        run: |
+          missing=0
+          for key in VITE_STEAM_API_KEY VITE_STEAM_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Secret ${key} is missing or empty"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: ISteamUser/GetPlayerSummaries/v2
+        env:
+          API_KEY: ${{ secrets.VITE_STEAM_API_KEY }}
+          STEAM_ID: ${{ secrets.VITE_STEAM_ID }}
+        run: |
+          response=$(curl -sf "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=$API_KEY&steamids=$STEAM_ID&format=json")
+          count=$(echo "$response" | jq '.response.players | length')
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No player returned — check VITE_STEAM_API_KEY and VITE_STEAM_ID"
+            exit 1
+          fi
+          echo "OK – $(echo "$response" | jq -r '.response.players[0].personaname')"
+
+      - name: IPlayerService/GetOwnedGames/v1
+        env:
+          API_KEY: ${{ secrets.VITE_STEAM_API_KEY }}
+          STEAM_ID: ${{ secrets.VITE_STEAM_ID }}
+        run: |
+          response=$(curl -sf "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=$API_KEY&steamid=$STEAM_ID&include_appinfo=true&format=json")
+          count=$(echo "$response" | jq '(.response.games // []) | length')
+          echo "OK – $count games"
+
+      - name: IPlayerService/GetSteamLevel/v1
+        env:
+          API_KEY: ${{ secrets.VITE_STEAM_API_KEY }}
+          STEAM_ID: ${{ secrets.VITE_STEAM_ID }}
+        run: |
+          response=$(curl -sf "https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=$API_KEY&steamid=$STEAM_ID&format=json")
+          level=$(echo "$response" | jq '.response.player_level // empty')
+          if [ -z "$level" ]; then
+            echo "::error::GetSteamLevel returned no level"
+            exit 1
+          fi
+          echo "OK – level $level"
+
+      - name: ISteamUser/GetFriendList/v1
+        env:
+          API_KEY: ${{ secrets.VITE_STEAM_API_KEY }}
+          STEAM_ID: ${{ secrets.VITE_STEAM_ID }}
+        run: |
+          http_code=$(curl -s -o /tmp/friends.json -w "%{http_code}" \
+            "https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=$API_KEY&steamid=$STEAM_ID&relationship=friend&format=json")
+          if [ "$http_code" -eq 401 ] || [ "$http_code" -eq 403 ]; then
+            echo "::warning::GetFriendList returned $http_code — profile friends list may be private"
+          elif [ "$http_code" -ne 200 ]; then
+            echo "::error::GetFriendList returned HTTP $http_code"
+            exit 1
+          else
+            count=$(jq '(.friendslist.friends // []) | length' /tmp/friends.json)
+            echo "OK – $count friends"
+          fi
