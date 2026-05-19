@@ -79,6 +79,16 @@ Then open the local URL shown by Vite.
 - `npm run build` – type-check and build for production
 - `npm run preview` – preview production build
 
+## GitHub Actions secrets
+
+If you run CI with GitHub Actions, add these repository secrets so the workflow can inject your Vite variables:
+
+- `VITE_STEAM_API_KEY`
+- `VITE_STEAM_VANITY_URL`
+- `VITE_STEAM_ID`
+
+The workflow creates a temporary `.env` file during CI from these secrets before lint, tests, and build steps run.
+
 ## Folder structure
 
 ```text
