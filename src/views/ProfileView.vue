@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getPlayerSummary } from '@/services/steamApi'
+import { getPlayerSummary, getSteamLevel } from '@/services/steamApi'
 import type { SteamPlayer } from '@/types/steam'
 import { formatUnixDate, getStatusLabel } from '@/utils/steamFormatters'
 
 const player = ref<SteamPlayer | null>(null)
+const steamLevel = ref<number | null>(null)
 const loading = ref(true)
 const error = ref('')
 
 onMounted(async () => {
   try {
-    player.value = await getPlayerSummary()
+    const [playerData, level] = await Promise.all([getPlayerSummary(), getSteamLevel()])
+    player.value = playerData
+    steamLevel.value = level
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load profile data.'
   } finally {
@@ -33,6 +36,7 @@ onMounted(async () => {
       <dl class="grid gap-2 text-sm text-slate-200">
         <div><dt class="inline font-semibold text-white">Username:</dt> {{ player.personaname }}</div>
         <div><dt class="inline font-semibold text-white">Status:</dt> {{ getStatusLabel(player.personastate) }}</div>
+        <div v-if="steamLevel !== null"><dt class="inline font-semibold text-white">Steam level:</dt> {{ steamLevel }}</div>
         <div><dt class="inline font-semibold text-white">Country:</dt> {{ player.loccountrycode ?? 'Unknown' }}</div>
         <div><dt class="inline font-semibold text-white">Account created:</dt> {{ formatUnixDate(player.timecreated) }}</div>
       </dl>

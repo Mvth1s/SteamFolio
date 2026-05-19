@@ -40,6 +40,11 @@ export async function getPlayerSummary(): Promise<SteamPlayer | null> {
   return data.response.players[0] ?? null
 }
 
+export async function getSteamLevel(): Promise<number | null> {
+  const data = await fetchSteamApi<{ response: { player_level?: number } }>('IPlayerService/GetSteamLevel/v1/')
+  return data.response.player_level ?? null
+}
+
 export async function getOwnedGames(): Promise<SteamOwnedGame[]> {
   const data = await fetchSteamApi<{ response: { games?: SteamOwnedGame[] } }>('IPlayerService/GetOwnedGames/v1/', {
     include_appinfo: 'true',
@@ -57,35 +62,47 @@ export async function getFriends(): Promise<SteamFriend[]> {
   return data.friendslist?.friends ?? []
 }
 
+const SUMMARIES_BATCH_SIZE = 100
+
 export async function getFriendsSummary(friendIds: string[]): Promise<SteamPlayer[]> {
-  if (!friendIds.length) {
-    return []
+  if (!friendIds.length) return []
+
+  const batches: string[][] = []
+  for (let i = 0; i < friendIds.length; i += SUMMARIES_BATCH_SIZE) {
+    batches.push(friendIds.slice(i, i + SUMMARIES_BATCH_SIZE))
   }
 
-  const queryParams = new URLSearchParams({
-    steamEndpoint: 'ISteamUser/GetPlayerSummaries/v2/',
-    steamids: friendIds.join(','),
-  })
+  const results = await Promise.all(
+    batches.map(async (batch) => {
+      const queryParams = new URLSearchParams({
+        steamEndpoint: 'ISteamUser/GetPlayerSummaries/v2/',
+        steamids: batch.join(','),
+      })
+      const response = await fetch(`/api/steam?${queryParams.toString()}`)
+      if (!response.ok) throw new Error(`Friend summary request failed with status ${response.status}`)
+      const data = (await response.json()) as { response: { players: SteamPlayer[] } }
+      return data.response.players
+    }),
+  )
 
-  const response = await fetch(`/api/steam?${queryParams.toString()}`)
-
-  if (!response.ok) {
-    throw new Error(`Friend summary request failed with status ${response.status}`)
-  }
-
-  const data = (await response.json()) as { response: { players: SteamPlayer[] } }
-  return data.response.players
+  return results.flat()
 }
 
 export async function getPlayerAchievements(appId: number): Promise<SteamAchievement[]> {
-  const data = await fetchSteamApi<{
-    playerstats?: {
-      achievements?: SteamAchievement[]
-    }
-  }>('ISteamUserStats/GetPlayerAchievements/v1/', {
+  const id = getConfigValue(steamId, 'VITE_STEAM_ID')
+  const queryParams = new URLSearchParams({
+    steamid: id,
+    steamEndpoint: 'ISteamUserStats/GetPlayerAchievements/v1/',
     appid: String(appId),
     l: 'english',
   })
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
 
+  // 400 = game has no achievement stats (not an error, just no data)
+  if (response.status === 400) return []
+
+  if (!response.ok) throw new Error(`Steam API request failed with status ${response.status}`)
+
+  const data = (await response.json()) as { playerstats?: { achievements?: SteamAchievement[] } }
   return data.playerstats?.achievements ?? []
 }

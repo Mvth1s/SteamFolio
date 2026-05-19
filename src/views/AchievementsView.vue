@@ -84,6 +84,7 @@ watch(selectedGameId, (appId) => {
       </div>
 
       <p v-if="loadingAchievements" class="text-slate-300">Loading achievements...</p>
+      <p v-else-if="!achievements.length" class="text-slate-400">This game has no achievements.</p>
 
       <ul v-else class="space-y-2">
         <li
