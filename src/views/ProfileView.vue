@@ -1,23 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getPlayerSummary, getSteamLevel } from '@/services/steamApi'
-import type { SteamPlayer } from '@/types/steam'
+import { getSteamLevel } from '@/services/steamApi'
+import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { formatUnixDate, getStatusLabel } from '@/utils/steamFormatters'
 
-const player = ref<SteamPlayer | null>(null)
+const { player, loading, error } = usePlayerSummary()
 const steamLevel = ref<number | null>(null)
-const loading = ref(true)
-const error = ref('')
 
 onMounted(async () => {
   try {
-    const [playerData, level] = await Promise.all([getPlayerSummary(), getSteamLevel()])
-    player.value = playerData
-    steamLevel.value = level
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Unable to load profile data.'
-  } finally {
-    loading.value = false
+    steamLevel.value = await getSteamLevel()
+  } catch {
+    // niveau non critique — on affiche simplement rien si indisponible
   }
 })
 </script>
