@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import handler from '../../../api/steam.js'
+import handler from '../steam.js'
 
 function createMockRes() {
   return {
