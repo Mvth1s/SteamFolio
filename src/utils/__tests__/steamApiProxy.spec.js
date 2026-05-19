@@ -85,6 +85,33 @@ describe('steam api proxy', () => {
     expect(calledUrl).toContain('steamid=76561198316121302')
   })
 
+  it('keeps canonical query key when both canonical and malformed keys exist', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const req = {
+      method: 'GET',
+      query: {
+        steamid: '76561198316121302',
+        'amp;steamEndpoint': 'IPlayerService/GetOwnedGames/v1/',
+        steamEndpoint: 'ISteamUser/GetPlayerSummaries/v2/',
+      },
+    }
+    const res = createMockRes()
+
+    await handler(req, res)
+
+    const [calledUrl] = fetchMock.mock.calls[0]
+    expect(calledUrl).toContain('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2?')
+  })
+
   it('keeps existing 400 behavior when endpoint is missing', async () => {
     const req = {
       method: 'GET',

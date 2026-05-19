@@ -12,9 +12,16 @@ export default async function handler(req, res) {
   }
 
   // Some clients accidentally encode '&' into the next query key (`amp;steamEndpoint`).
-  const normalizedQuery = Object.fromEntries(
-    Object.entries(req.query).map(([key, value]) => [key.replace(/^(?:amp;)+/, ''), value]),
-  )
+  const normalizedQuery = {}
+  for (const [key, value] of Object.entries(req.query)) {
+    const normalizedKey = key.replace(/^(?:amp;)+/, '')
+    const hasNormalizedKey = Object.hasOwn(normalizedQuery, normalizedKey)
+    const isMalformedKey = key !== normalizedKey
+
+    if (!hasNormalizedKey || !isMalformedKey) {
+      normalizedQuery[normalizedKey] = value
+    }
+  }
 
   const { steamEndpoint, ...rawParams } = normalizedQuery
   const endpointValue = Array.isArray(steamEndpoint) ? steamEndpoint[0] : steamEndpoint
