@@ -55,6 +55,32 @@ describe('steam api proxy', () => {
     expect(calledUrl).toContain('steamid=76561198316121302')
   })
 
+  it('accepts repeatedly encoded amp-prefixed endpoint query key', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const req = {
+      method: 'GET',
+      query: {
+        steamid: '76561198316121302',
+        'amp;amp;steamEndpoint': 'ISteamUser/GetPlayerSummaries/v2/',
+      },
+    }
+    const res = createMockRes()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps existing 400 behavior when endpoint is missing', async () => {
     const req = {
       method: 'GET',
