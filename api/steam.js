@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   const normalizedEndpoint = endpointValue.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
-  if (!/^[A-Za-z0-9/]+$/.test(normalizedEndpoint)) {
+  if (!/^[A-Za-z0-9/.]+$/.test(normalizedEndpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint query parameter' })
   }
   const targetUrl = `${STEAM_API_BASE_URL}/${normalizedEndpoint}?${queryParams.toString()}`
@@ -38,7 +38,9 @@ export default async function handler(req, res) {
     if (contentType.includes('application/json')) {
       data = await response.json()
     } else {
-      data = { error: 'Steam API returned non-JSON response', body: await response.text() }
+      const nonJsonBody = await response.text()
+      console.error('Steam API returned non-JSON response:', nonJsonBody)
+      data = { error: 'Steam API returned non-JSON response' }
     }
     return res.status(response.status).json(data)
   } catch (error) {
