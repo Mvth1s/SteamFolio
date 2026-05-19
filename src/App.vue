@@ -1,6 +1,17 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import NavBar from '@/components/layout/NavBar.vue'
 import { RouterView } from 'vue-router'
+import { getPlayerSummary } from '@/services/steamApi'
+
+onMounted(async () => {
+  const player = await getPlayerSummary().catch(() => null)
+  if (!player?.avatarfull) return
+  const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]') ?? document.createElement('link')
+  link.rel = 'icon'
+  link.href = player.avatarfull
+  if (!link.parentNode) document.head.appendChild(link)
+})
 </script>
 
 <template>
