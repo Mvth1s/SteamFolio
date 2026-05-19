@@ -1,6 +1,6 @@
 import type { SteamAchievement, SteamFriend, SteamOwnedGame, SteamPlayer } from '@/types/steam'
 
-const steamId64 = import.meta.env.VITE_STEAM_ID64
+const steamId = import.meta.env.VITE_STEAM_ID
 
 function getConfigValue(value: string | undefined, label: string): string {
   if (!value) {
@@ -11,7 +11,7 @@ function getConfigValue(value: string | undefined, label: string): string {
 }
 
 async function fetchSteamApi<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-  const id = getConfigValue(steamId64, 'VITE_STEAM_ID64')
+  const id = getConfigValue(steamId, 'VITE_STEAM_ID')
 
   const queryParams = new URLSearchParams({
     steamid: id,

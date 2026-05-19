@@ -54,7 +54,7 @@ Required variables:
 ```env
 VITE_STEAM_API_KEY=your_steam_web_api_key
 VITE_STEAM_VANITY_URL=your_steam_vanity_url
-VITE_STEAM_ID64=your_steam_id64
+VITE_STEAM_ID=your_steam_id64
 ```
 
 > **For VITE_STEAM_VANITY_URL**: Use only the username portion from your Steam profile URL. For example, if your profile URL is `https://steamcommunity.com/id/Mvtos`, use `Mvtos` (not `/id/Mvtos`).
