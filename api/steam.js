@@ -1,5 +1,25 @@
 const STEAM_API_BASE_URL = 'https://api.steampowered.com'
 
+function getFallbackEndpointFromRawUrl(req) {
+  if (typeof req.url !== 'string' || !req.url.includes('?')) {
+    return undefined
+  }
+
+  const [, rawSearch = ''] = req.url.split('?', 2)
+  let decodedSearch = rawSearch
+  while (decodedSearch.includes('&amp;')) {
+    decodedSearch = decodedSearch.replaceAll('&amp;', '&')
+  }
+  const params = new URLSearchParams(decodedSearch)
+  for (const [key, value] of params.entries()) {
+    const normalizedKey = key.replace(/^(?:amp;)+/, '')
+    if (normalizedKey === 'steamEndpoint' && value) {
+      return value
+    }
+  }
+  return undefined
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
@@ -11,9 +31,24 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STEAM_API_KEY or VITE_STEAM_API_KEY is not configured' })
   }
 
-  const { steamEndpoint, ...rawParams } = req.query
+  // Some clients accidentally encode '&' into the next query key (`amp;steamEndpoint`).
+  const normalizedQuery = {}
+  for (const [key, value] of Object.entries(req.query)) {
+    const normalizedKey = key.replace(/^(?:amp;)+/, '')
+    const hasNormalizedKey = Object.prototype.hasOwnProperty.call(normalizedQuery, normalizedKey)
+    const isMalformedKey = key !== normalizedKey
+
+    if (isMalformedKey && hasNormalizedKey) {
+      continue
+    }
+    normalizedQuery[normalizedKey] = value
+  }
+
+  const { steamEndpoint, ...rawParams } = normalizedQuery
   const endpointValue = Array.isArray(steamEndpoint) ? steamEndpoint[0] : steamEndpoint
-  if (!endpointValue) {
+  const fallbackEndpoint = getFallbackEndpointFromRawUrl(req)
+  const resolvedEndpoint = endpointValue || fallbackEndpoint
+  if (!resolvedEndpoint) {
     return res.status(400).json({ error: 'Missing steamEndpoint query parameter' })
   }
 
@@ -25,7 +60,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const normalizedEndpoint = endpointValue.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
+  const normalizedEndpoint = resolvedEndpoint.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
   if (!/^[A-Za-z0-9/.]+$/.test(normalizedEndpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint query parameter' })
   }
