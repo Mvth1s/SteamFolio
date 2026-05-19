@@ -6,9 +6,18 @@ function getFallbackEndpointFromRawUrl(req) {
   }
 
   const [, rawSearch = ''] = req.url.split('?', 2)
-  const decodedSearch = rawSearch.replaceAll('&amp;', '&')
+  let decodedSearch = rawSearch
+  while (decodedSearch.includes('&amp;')) {
+    decodedSearch = decodedSearch.replaceAll('&amp;', '&')
+  }
   const params = new URLSearchParams(decodedSearch)
-  return params.get('steamEndpoint') ?? params.get('amp;steamEndpoint') ?? undefined
+  for (const [key, value] of params.entries()) {
+    const normalizedKey = key.replace(/^(?:amp;)+/, '')
+    if (normalizedKey === 'steamEndpoint' && value) {
+      return value
+    }
+  }
+  return undefined
 }
 
 export default async function handler(req, res) {
@@ -29,9 +38,10 @@ export default async function handler(req, res) {
     const hasNormalizedKey = Object.hasOwn(normalizedQuery, normalizedKey)
     const isMalformedKey = key !== normalizedKey
 
-    if (!hasNormalizedKey || !isMalformedKey) {
-      normalizedQuery[normalizedKey] = value
+    if (isMalformedKey && hasNormalizedKey) {
+      continue
     }
+    normalizedQuery[normalizedKey] = value
   }
 
   const { steamEndpoint, ...rawParams } = normalizedQuery
