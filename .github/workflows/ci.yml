@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      VITE_STEAM_API_KEY: ${{ secrets.VITE_STEAM_API_KEY }}
+      VITE_STEAM_VANITY_URL: ${{ secrets.VITE_STEAM_VANITY_URL }}
+      VITE_STEAM_ID: ${{ secrets.VITE_STEAM_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate required secrets
+        if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
+        run: |
+          missing=0
+          for key in VITE_STEAM_API_KEY VITE_STEAM_VANITY_URL VITE_STEAM_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required secret: ${key}"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit -- --run
+
+      - name: Build
+        run: npm run build

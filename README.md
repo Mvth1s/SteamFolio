@@ -79,6 +79,31 @@ Then open the local URL shown by Vite.
 - `npm run build` – type-check and build for production
 - `npm run preview` – preview production build
 
+## GitHub Actions secrets
+
+If you run CI with GitHub Actions, add these repository secrets so the workflow can inject your Vite variables:
+
+- `VITE_STEAM_API_KEY`
+- `VITE_STEAM_VANITY_URL`
+- `VITE_STEAM_ID`
+
+The workflow injects these values into the CI job environment and validates they are present (except for forked pull requests where secrets are unavailable).
+
+## Vercel environment variable sync
+
+This repository includes `.github/workflows/vercel-env-sync.yml` to automatically sync environment variables to Vercel on each push to `main` (and manually via `workflow_dispatch`).
+
+Add these GitHub repository secrets:
+
+- `VERCEL_TOKEN`
+- `VERCEL_PROJECT_ID`
+- `VERCEL_TEAM_ID` (optional; only needed for team-scoped projects)
+- `VITE_STEAM_API_KEY`
+- `VITE_STEAM_VANITY_URL`
+- `VITE_STEAM_ID`
+
+The sync targets all Vercel environments: `development`, `preview`, and `production`.
+
 ## Folder structure
 
 ```text
