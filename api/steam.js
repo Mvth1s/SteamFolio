@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STEAM_API_KEY or VITE_STEAM_API_KEY is not configured' })
   }
 
+  // Some clients accidentally encode '&' as part of the next query key (`amp;steamEndpoint`).
   const normalizedQuery = Object.fromEntries(
     Object.entries(req.query).map(([key, value]) => [key.replace(/^amp;/, ''), value]),
   )
