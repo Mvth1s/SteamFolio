@@ -6,9 +6,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' })
   }
 
-  const apiKey = process.env.VITE_STEAM_API_KEY
+  const apiKey = process.env.STEAM_API_KEY ?? process.env.VITE_STEAM_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'VITE_STEAM_API_KEY is not configured' })
+    return res.status(500).json({ error: 'STEAM_API_KEY or VITE_STEAM_API_KEY is not configured' })
   }
 
   const { endpoint, ...rawParams } = req.query
@@ -25,7 +25,10 @@ export default async function handler(req, res) {
     }
   }
 
-  const normalizedEndpoint = endpointValue.startsWith('/') ? endpointValue.slice(1) : endpointValue
+  const normalizedEndpoint = endpointValue.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
+  if (!/^[A-Za-z0-9/_-]+$/.test(normalizedEndpoint)) {
+    return res.status(400).json({ error: 'Invalid endpoint query parameter' })
+  }
   const targetUrl = `${STEAM_API_BASE_URL}/${normalizedEndpoint}?${queryParams.toString()}`
 
   try {
