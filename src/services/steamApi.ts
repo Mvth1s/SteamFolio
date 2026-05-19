@@ -29,8 +29,14 @@ async function fetchSteamApi<T>(endpoint: string, params: Record<string, string>
 }
 
 export async function getPlayerSummary(): Promise<SteamPlayer | null> {
-  const data = await fetchSteamApi<{ response: { players: SteamPlayer[] } }>('ISteamUser/GetPlayerSummaries/v2/')
-
+  const id = getConfigValue(steamId, 'VITE_STEAM_ID')
+  const queryParams = new URLSearchParams({
+    steamids: id,
+    steamEndpoint: 'ISteamUser/GetPlayerSummaries/v2/',
+  })
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
+  if (!response.ok) throw new Error(`Steam API request failed with status ${response.status}`)
+  const data = (await response.json()) as { response: { players: SteamPlayer[] } }
   return data.response.players[0] ?? null
 }
 
