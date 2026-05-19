@@ -57,14 +57,6 @@ VITE_STEAM_VANITY_URL=your_steam_vanity_url
 VITE_STEAM_ID=your_steam_id64
 ```
 
-Optional:
-
-```env
-VITE_STEAM_PROXY_PREFIX=https://corsproxy.io/?
-```
-
-> `VITE_STEAM_PROXY_PREFIX` is used to avoid browser CORS restrictions when calling the Steam API directly from the client.
->
 > **For VITE_STEAM_VANITY_URL**: Use only the username portion from your Steam profile URL. For example, if your profile URL is `https://steamcommunity.com/id/Mvtos`, use `Mvtos` (not `/id/Mvtos`).
 >
 > **To find your Steam Vanity URL**: Visit your Steam profile and look at the custom URL (usually in the format `/id/username`). Use only the `username` part.
@@ -92,6 +84,8 @@ Then open the local URL shown by Vite.
 ```text
 .
 ├── .env.example
+├── api
+│   └── steam.js
 ├── src
 │   ├── assets
 │   │   └── main.css
@@ -120,6 +114,8 @@ Then open the local URL shown by Vite.
 ```
 
 ## Steam API endpoints used
+
+Client requests are sent to the Vercel Function at `/api/steam`, which performs the upstream Steam API calls server-side.
 
 - `ISteamUser/ResolveVanityURL/v1` – Resolve vanity URL to SteamID64
 - `ISteamUser/GetPlayerSummaries/v2` – Get player summary (avatar, username, status)
