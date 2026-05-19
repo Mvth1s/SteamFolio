@@ -4,23 +4,16 @@ SteamFolio is a Vue 3 dashboard powered by the Steam Web API. It gives a quick o
 
 ## Features
 
-- **Profile overview**
-  - Avatar, username, online status, country, account creation date
-- **Game library**
-  - Owned games list with icon + playtime
-  - Search and sort options (name/playtime)
-- **Achievements**
-  - Per-game achievements list
-  - Completion percentage progress bar
-- **Friends list**
-  - Friends with current status
-  - Direct links to Steam profiles
+- **Profile overview** — avatar, username, online status, Steam level, country, account creation date
+- **Game library** — owned games with icon and playtime, searchable and sortable
+- **Achievements** — per-game achievements with completion percentage progress bar
+- **Friends list** — friends with current status and direct links to their Steam profiles
 
 ## Tech stack
 
 - Vue 3 + TypeScript
 - Vue Router
-- Tailwind CSS
+- Tailwind CSS v4
 - Vitest (unit tests)
 
 ## Getting started
@@ -31,37 +24,26 @@ SteamFolio is a Vue 3 dashboard powered by the Steam Web API. It gives a quick o
 npm install
 ```
 
-### 2) Get a Steam Web API Key
+### 2) Get a Steam Web API key
 
 1. Visit [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey)
-2. Log in with your Steam account
-3. Accept the Steam Web API Terms of Use
-4. Choose an appropriate domain name (or use localhost)
-5. Copy your API key
+2. Log in with your Steam account and accept the Terms of Use
+3. Copy your API key
 
-> **Note:** Your API key is personal and should never be shared. Keep it secure in your `.env` file.
+> Your API key is personal — keep it in `.env` and never commit it.
 
 ### 3) Configure environment variables
-
-Copy `.env.example` to `.env` and provide your values:
 
 ```bash
 cp .env.example .env
 ```
 
-Required variables:
-
 ```env
 VITE_STEAM_API_KEY=your_steam_web_api_key
-VITE_STEAM_VANITY_URL=your_steam_vanity_url
 VITE_STEAM_ID=your_steam_id64
 ```
 
-> **For VITE_STEAM_VANITY_URL**: Use only the username portion from your Steam profile URL. For example, if your profile URL is `https://steamcommunity.com/id/Mvtos`, use `Mvtos` (not `/id/Mvtos`).
->
-> **To find your Steam Vanity URL**: Visit your Steam profile and look at the custom URL (usually in the format `/id/username`). Use only the `username` part.
->
-> **To find your SteamID64**: Visit [https://steamcommunity.com/profiles/](https://steamcommunity.com/profiles/) or use the ResolveVanityURL endpoint with your vanity URL.
+> **Finding your SteamID64:** visit your profile on [steamcommunity.com](https://steamcommunity.com) and look at the URL — it ends with a 17-digit number. Tools like [steamid.io](https://steamid.io) can also convert a vanity URL to a SteamID64.
 
 ### 4) Run the app
 
@@ -69,83 +51,50 @@ VITE_STEAM_ID=your_steam_id64
 npm run dev
 ```
 
-Then open the local URL shown by Vite.
+Open the local URL shown by Vite. The Vite dev server handles `/api/steam` requests by running the Vercel handler directly, so no separate server is needed.
 
 ## Scripts
 
-- `npm run dev` – start development server
-- `npm run lint` – run Oxlint + ESLint
-- `npm run test:unit -- --run` – run unit tests once
-- `npm run build` – type-check and build for production
-- `npm run preview` – preview production build
+| Command | Description |
+|---|---|
+| `npm run dev` | Start development server |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run Oxlint then ESLint (both with `--fix`) |
+| `npm run test:unit -- --run` | Run unit tests once |
+| `npm run test:unit` | Run unit tests in watch mode |
 
-## GitHub Actions secrets
+## CI / CD
 
-If you run CI with GitHub Actions, add these repository secrets so the workflow can inject your Vite variables:
+Two GitHub Actions workflows run automatically:
+
+### `ci.yml` — runs on every push and pull request
+- Validates that required secrets are present
+- Installs dependencies, runs lint, unit tests, and build
+
+### `api-health.yml` — runs daily at 08:00 UTC (and on demand)
+Calls the live Steam API endpoints using the stored secrets and checks that each returns valid data. Useful to detect an expired API key or a broken endpoint before users do.
+
+Required GitHub repository secrets for both workflows:
 
 - `VITE_STEAM_API_KEY`
-- `VITE_STEAM_VANITY_URL`
 - `VITE_STEAM_ID`
 
-The workflow injects these values into the CI job environment and validates they are present (except for forked pull requests where secrets are unavailable).
+## Deployment
 
-## Vercel environment variable sync
+The app is deployed on Vercel. On Vercel, set `STEAM_API_KEY` (without the `VITE_` prefix) as a server-side environment variable so the API key is never exposed in the client bundle.
 
-This repository includes `.github/workflows/vercel-env-sync.yml` to automatically sync environment variables to Vercel on each push to `main` (and manually via `workflow_dispatch`).
-
-Add these GitHub repository secrets:
-
-- `VERCEL_TOKEN`
-- `VERCEL_PROJECT_ID`
-- `VERCEL_TEAM_ID` (optional; only needed for team-scoped projects)
-- `VITE_STEAM_API_KEY`
-- `VITE_STEAM_VANITY_URL`
-- `VITE_STEAM_ID`
-
-The sync targets all Vercel environments: `development`, `preview`, and `production`.
-
-## Folder structure
-
-```text
-.
-├── .env.example
-├── api
-│   └── steam.js
-├── src
-│   ├── assets
-│   │   └── main.css
-│   ├── components
-│   │   └── layout
-│   │       └── NavBar.vue
-│   ├── router
-│   │   └── index.ts
-│   ├── services
-│   │   └── steamApi.ts
-│   ├── types
-│   │   └── steam.ts
-│   ├── utils
-│   │   ├── __tests__
-│   │   │   └── steamFormatters.spec.ts
-│   │   └── steamFormatters.ts
-│   ├── views
-│   │   ├── AchievementsView.vue
-│   │   ├── FriendsView.vue
-│   │   ├── LibraryView.vue
-│   │   └── ProfileView.vue
-│   ├── App.vue
-│   └── main.ts
-├── env.d.ts
-└── vite.config.ts
-```
+`vercel.json` rewrites all non-`/api/` paths to `index.html` for SPA routing.
 
 ## Steam API endpoints used
 
-Client requests are sent to the Vercel Function at `/api/steam`, which performs the upstream Steam API calls server-side.
+All calls go through `api/steam.js` (Vercel Serverless Function), which appends the API key server-side.
 
-- `ISteamUser/ResolveVanityURL/v1` – Resolve vanity URL to SteamID64
-- `ISteamUser/GetPlayerSummaries/v2` – Get player summary (avatar, username, status)
-- `IPlayerService/GetOwnedGames/v1` – Get owned games with playtime
-- `IPlayerService/GetRecentlyPlayedGames/v1` – Get recently played games
-- `IPlayerService/GetSteamLevel/v1` – Get Steam account level
-- `ISteamUserStats/GetPlayerAchievements/v1` – Get player achievements
-- `ISteamUser/GetFriendList/v1` – Get friend list
+| Endpoint | Purpose |
+|---|---|
+| `ISteamUser/GetPlayerSummaries/v2` | Avatar, username, status |
+| `IPlayerService/GetSteamLevel/v1` | Steam account level |
+| `IPlayerService/GetOwnedGames/v1` | Game library with playtime |
+| `ISteamUserStats/GetPlayerAchievements/v1` | Per-game achievements |
+| `ISteamUser/GetFriendList/v1` | Friend list |
+| `ISteamUser/GetPlayerSummaries/v2` *(batched)* | Friend details (100 per request) |
