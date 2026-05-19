@@ -32,7 +32,8 @@ export default async function handler(req, res) {
     const response = await fetch(targetUrl)
     const data = await response.json()
     return res.status(response.status).json(data)
-  } catch {
+  } catch (error) {
+    console.error('Steam API proxy error:', error)
     return res.status(502).json({ error: 'Failed to reach Steam API' })
   }
 }
