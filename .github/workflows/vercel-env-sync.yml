@@ -37,9 +37,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          query=""
+          # upsert=true ensures the variable is created if missing or updated if it already exists.
+          query="upsert=true"
           if [ -n "${VERCEL_TEAM_ID:-}" ]; then
-            query="?teamId=${VERCEL_TEAM_ID}"
+            query="${query}&teamId=${VERCEL_TEAM_ID}"
           fi
 
           for key in VITE_STEAM_API_KEY VITE_STEAM_VANITY_URL VITE_STEAM_ID; do
@@ -50,13 +51,19 @@ jobs:
               '{key: $key, value: $value, target: ["development", "preview", "production"], type: "encrypted"}'
             )"
 
-            curl --fail-with-body --silent --show-error \
+            response="$(
+              curl --fail-with-body --silent --show-error \
               --request POST \
-              --url "https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/env${query}" \
+              --url "https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/env?${query}" \
               --header "Authorization: Bearer ${VERCEL_TOKEN}" \
               --header "Content-Type: application/json" \
-              --data "$payload" \
-              > /dev/null
+              --data "$payload"
+            )"
+
+            if [ -z "$response" ]; then
+              echo "::error::Empty response from Vercel API while syncing ${key}"
+              exit 1
+            fi
 
             echo "Synced ${key} to Vercel (development/preview/production)."
           done
