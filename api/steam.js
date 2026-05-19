@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   const normalizedQuery = {}
   for (const [key, value] of Object.entries(req.query)) {
     const normalizedKey = key.replace(/^(?:amp;)+/, '')
-    const hasNormalizedKey = Object.hasOwn(normalizedQuery, normalizedKey)
+    const hasNormalizedKey = Object.prototype.hasOwnProperty.call(normalizedQuery, normalizedKey)
     const isMalformedKey = key !== normalizedKey
 
     if (isMalformedKey && hasNormalizedKey) {
