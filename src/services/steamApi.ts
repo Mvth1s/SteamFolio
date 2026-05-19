@@ -1,8 +1,6 @@
 import type { SteamAchievement, SteamFriend, SteamOwnedGame, SteamPlayer } from '@/types/steam'
 
-const steamApiKey = import.meta.env.VITE_STEAM_API_KEY
-const steamId = import.meta.env.VITE_STEAM_ID
-const proxyPrefix = import.meta.env.VITE_STEAM_PROXY_PREFIX ?? 'https://corsproxy.io/?'
+const steamId64 = import.meta.env.VITE_STEAM_ID64
 
 function getConfigValue(value: string | undefined, label: string): string {
   if (!value) {
@@ -12,27 +10,16 @@ function getConfigValue(value: string | undefined, label: string): string {
   return value
 }
 
-function buildApiUrl(baseUrl: string): string {
-  if (!proxyPrefix) {
-    return baseUrl
-  }
-
-  return `${proxyPrefix}${encodeURIComponent(baseUrl)}`
-}
-
 async function fetchSteamApi<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-  const key = getConfigValue(steamApiKey, 'VITE_STEAM_API_KEY')
-  const id = getConfigValue(steamId, 'VITE_STEAM_ID')
+  const id = getConfigValue(steamId64, 'VITE_STEAM_ID64')
 
   const queryParams = new URLSearchParams({
-    key,
     steamid: id,
-    format: 'json',
+    endpoint,
     ...params,
   })
 
-  const targetUrl = `https://api.steampowered.com/${endpoint}?${queryParams.toString()}`
-  const response = await fetch(buildApiUrl(targetUrl))
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
 
   if (!response.ok) {
     throw new Error(`Steam API request failed with status ${response.status}`)
@@ -69,14 +56,12 @@ export async function getFriendsSummary(friendIds: string[]): Promise<SteamPlaye
     return []
   }
 
-  const key = getConfigValue(steamApiKey, 'VITE_STEAM_API_KEY')
-  const targetUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?${new URLSearchParams({
-    key,
+  const queryParams = new URLSearchParams({
+    endpoint: 'ISteamUser/GetPlayerSummaries/v2/',
     steamids: friendIds.join(','),
-    format: 'json',
-  }).toString()}`
+  })
 
-  const response = await fetch(buildApiUrl(targetUrl))
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
 
   if (!response.ok) {
     throw new Error(`Friend summary request failed with status ${response.status}`)
