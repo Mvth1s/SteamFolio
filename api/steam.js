@@ -1,5 +1,16 @@
 const STEAM_API_BASE_URL = 'https://api.steampowered.com'
 
+function getFallbackEndpointFromRawUrl(req) {
+  if (typeof req.url !== 'string' || !req.url.includes('?')) {
+    return undefined
+  }
+
+  const [, rawSearch = ''] = req.url.split('?', 2)
+  const decodedSearch = rawSearch.replaceAll('&amp;', '&')
+  const params = new URLSearchParams(decodedSearch)
+  return params.get('steamEndpoint') ?? params.get('amp;steamEndpoint') ?? undefined
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
@@ -25,7 +36,9 @@ export default async function handler(req, res) {
 
   const { steamEndpoint, ...rawParams } = normalizedQuery
   const endpointValue = Array.isArray(steamEndpoint) ? steamEndpoint[0] : steamEndpoint
-  if (!endpointValue) {
+  const fallbackEndpoint = getFallbackEndpointFromRawUrl(req)
+  const resolvedEndpoint = endpointValue || fallbackEndpoint
+  if (!resolvedEndpoint) {
     return res.status(400).json({ error: 'Missing steamEndpoint query parameter' })
   }
 
@@ -37,7 +50,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const normalizedEndpoint = endpointValue.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
+  const normalizedEndpoint = resolvedEndpoint.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
   if (!/^[A-Za-z0-9/.]+$/.test(normalizedEndpoint)) {
     return res.status(400).json({ error: 'Invalid endpoint query parameter' })
   }
