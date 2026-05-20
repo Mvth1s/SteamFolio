@@ -39,6 +39,17 @@ function formatHours(minutes: number): string {
   return h > 0 ? `${h}h` : `${minutes}m`
 }
 
+function formatLastPlayed(ts: number): string {
+  if (!ts) return ''
+  const days = Math.floor((Date.now() / 1000 - ts) / 86400)
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}wk ago`
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`
+  return `${Math.floor(days / 365)}y ago`
+}
+
 const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
   { value: 'playtime-desc', labelKey: 'lib.byPlay' },
   { value: 'name-asc',      labelKey: 'lib.alpha' },
@@ -110,6 +121,7 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
             <div class="gmeta">
               <span class="h">{{ formatHours(game.playtime_forever) }}</span>
               <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">never played</span>
+              <span v-else-if="game.rtime_last_played" style="color:var(--text-mute)">{{ formatLastPlayed(game.rtime_last_played) }}</span>
             </div>
           </div>
         </div>
