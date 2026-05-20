@@ -50,6 +50,10 @@ export function sortAndFilterGames(
     })
 }
 
+export function buildGameHeaderUrl(appId: number): string {
+  return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
+}
+
 export function buildGameIconUrl(appId: number, iconHash?: string): string {
   if (!iconHash) {
     return 'https://placehold.co/64x64?text=?'

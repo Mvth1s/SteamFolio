@@ -1,15 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import DashboardView from '@/views/DashboardView.vue'
+import ProfileView from '@/views/ProfileView.vue'
+import LibraryView from '@/views/LibraryView.vue'
 import AchievementsView from '@/views/AchievementsView.vue'
 import FriendsView from '@/views/FriendsView.vue'
-import LibraryView from '@/views/LibraryView.vue'
-import ProfileView from '@/views/ProfileView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/profile',
+      redirect: '/dashboard',
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: DashboardView,
     },
     {
       path: '/profile',
@@ -30,6 +37,11 @@ const router = createRouter({
       path: '/friends',
       name: 'friends',
       component: FriendsView,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView,
     },
   ],
 })

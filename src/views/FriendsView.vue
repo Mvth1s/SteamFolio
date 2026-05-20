@@ -3,17 +3,60 @@ import { computed, onMounted, ref } from 'vue'
 import { getFriends, getFriendsSummary } from '@/services/steamApi'
 import type { SteamPlayer } from '@/types/steam'
 import { getStatusLabel } from '@/utils/steamFormatters'
+import { useI18n } from '@/composables/useI18n'
+import { useSound } from '@/composables/useSound'
+
+const { t } = useI18n()
+const { click } = useSound()
 
 const friends = ref<SteamPlayer[]>([])
 const loading = ref(true)
 const error = ref('')
+const filter = ref<'all' | 'online' | 'in-game' | 'offline'>('all')
 
-const sortedFriends = computed(() => [...friends.value].sort((a, b) => a.personaname.localeCompare(b.personaname)))
+function statusKind(state: number): 'online' | 'in-game' | 'away' | 'offline' {
+  if (state === 1) return 'online'
+  if (state === 3 || state === 4) return 'away'
+  if (state === 6) return 'in-game'
+  return 'offline'
+}
+
+const sorted = computed(() => [...friends.value].sort((a, b) => {
+  const order = { 'in-game': 0, online: 1, away: 2, offline: 3 }
+  return (order[statusKind(a.personastate)] ?? 3) - (order[statusKind(b.personastate)] ?? 3)
+}))
+
+const visible = computed(() => {
+  if (filter.value === 'all') return sorted.value
+  if (filter.value === 'online') return sorted.value.filter(f => statusKind(f.personastate) !== 'offline')
+  if (filter.value === 'in-game') return sorted.value.filter(f => statusKind(f.personastate) === 'in-game')
+  return sorted.value.filter(f => statusKind(f.personastate) === 'offline')
+})
+
+const onlineCount = computed(() => friends.value.filter(f => statusKind(f.personastate) !== 'offline').length)
+const inGameCount = computed(() => friends.value.filter(f => statusKind(f.personastate) === 'in-game').length)
+const offlineCount = computed(() => friends.value.filter(f => statusKind(f.personastate) === 'offline').length)
+
+function dotStyle(state: number): string {
+  const k = statusKind(state)
+  if (k === 'in-game') return 'background:var(--accent)'
+  if (k === 'online') return 'background:var(--good)'
+  if (k === 'away') return 'background:var(--xp)'
+  return 'background:var(--text-mute)'
+}
+
+function statusColor(state: number): string {
+  const k = statusKind(state)
+  if (k === 'in-game') return 'var(--accent)'
+  if (k === 'online') return 'var(--good)'
+  if (k === 'away') return 'var(--xp)'
+  return 'var(--text-mute)'
+}
 
 onMounted(async () => {
   try {
     const friendList = await getFriends()
-    friends.value = await getFriendsSummary(friendList.map((friend) => friend.steamid))
+    friends.value = await getFriendsSummary(friendList.map(f => f.steamid))
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load friends list.'
   } finally {
@@ -23,35 +66,76 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-lg">
-    <h2 class="mb-4 text-xl font-semibold text-white">Friends list</h2>
+  <div>
+    <div class="section-h">
+      <h2>{{ t('nav.friends').toUpperCase() }}</h2>
+      <span class="meta" v-if="!loading">
+        {{ friends.length }} {{ t('friends.total') }}
+        · {{ onlineCount }} {{ t('common.online').toLowerCase() }}
+        · {{ inGameCount }} {{ t('common.inGame').toLowerCase() }}
+      </span>
+    </div>
 
-    <p v-if="loading" class="text-slate-300">Loading friends...</p>
-    <p v-else-if="error" class="text-red-300">{{ error }}</p>
+    <div class="toolbar">
+      <button
+        v-for="[key, label] in ([
+          ['all',     `${t('friends.all')} · ${friends.length}`],
+          ['online',  `${t('friends.online')} · ${onlineCount}`],
+          ['in-game', `${t('friends.ingame')} · ${inGameCount}`],
+          ['offline', `${t('friends.offline')} · ${offlineCount}`],
+        ] as [string, string][])"
+        :key="key"
+        class="chip"
+        :class="{ active: filter === key }"
+        @click="filter = key as typeof filter; click()"
+      >{{ label }}</button>
+      <div style="flex:1" />
+      <button class="chip" style="color:var(--accent);border-color:var(--accent-dim)" @click="click()">
+        {{ t('friends.addFriend') }}
+      </button>
+    </div>
 
-    <ul v-else class="space-y-2">
-      <li
-        v-for="friend in sortedFriends"
+    <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
+      Loading friends…
+    </p>
+    <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
+
+    <div v-else-if="visible.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
+      No friends in this filter.
+    </div>
+
+    <div v-else class="grid friends">
+      <div
+        v-for="friend in visible"
         :key="friend.steamid"
-        class="flex items-center justify-between rounded-md border border-slate-700 bg-slate-900 p-3"
+        class="pcard friend-card"
       >
-        <div class="flex items-center gap-3">
-          <img :src="friend.avatarfull" :alt="`${friend.personaname} avatar`" class="h-10 w-10 rounded" />
-          <div>
-            <p class="font-medium text-slate-100">{{ friend.personaname }}</p>
-            <p class="text-sm text-slate-300">{{ getStatusLabel(friend.personastate) }}</p>
-          </div>
+        <div style="position:relative;flex-shrink:0">
+          <img
+            :src="friend.avatarfull"
+            :alt="friend.personaname"
+            class="avatar"
+            style="width:56px;height:56px;border:1px solid var(--line-soft)"
+          />
+          <span
+            class="dot"
+            :style="`position:absolute;right:-2px;bottom:-2px;${dotStyle(friend.personastate)}`"
+          />
         </div>
-
-        <a
-          :href="friend.profileurl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-sm text-cyan-300 hover:text-cyan-200"
-        >
-          View profile
-        </a>
-      </li>
-    </ul>
-  </section>
+        <div style="min-width:0">
+          <div class="fname">{{ friend.personaname }}</div>
+          <div class="fstat" :style="{ color: statusColor(friend.personastate) }">
+            <span class="dot" :style="dotStyle(friend.personastate)" />
+            <span>{{ getStatusLabel(friend.personastate) }}</span>
+          </div>
+          <a
+            :href="friend.profileurl"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="font-family:var(--pixel);font-size:7px;color:var(--accent);letter-spacing:1px;margin-top:6px;display:inline-block;"
+          >VIEW ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

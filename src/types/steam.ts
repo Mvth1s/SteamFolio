@@ -6,6 +6,7 @@ export interface SteamPlayer {
   personastate: number
   loccountrycode?: string
   timecreated?: number
+  personasummary?: string
 }
 
 export interface SteamOwnedGame {
@@ -13,6 +14,7 @@ export interface SteamOwnedGame {
   name: string
   playtime_forever: number
   img_icon_url?: string
+  rtime_last_played?: number
 }
 
 export interface SteamFriend {
@@ -32,3 +34,11 @@ export interface SteamAchievement {
 }
 
 export type LibrarySortOption = 'name-asc' | 'name-desc' | 'playtime-asc' | 'playtime-desc'
+
+export interface SteamRecentGame {
+  appid: number
+  name: string
+  playtime_2weeks: number
+  playtime_forever: number
+  img_icon_url?: string
+}

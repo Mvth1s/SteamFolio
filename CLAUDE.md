@@ -11,6 +11,9 @@ npm run lint             # run Oxlint then ESLint (both with --fix)
 npm run test:unit -- --run   # run unit tests once (no watch)
 npm run test:unit        # run unit tests in watch mode
 npm run preview          # preview production build locally
+
+# Run a single test file
+npx vitest run src/services/__tests__/steamApi.spec.ts
 ```
 
 ## Environment variables
@@ -51,9 +54,17 @@ In development, a Vite plugin in `vite.config.ts` intercepts `/api/steam` reques
 - **`src/router/index.ts`** — four routes: `/profile`, `/library`, `/achievements`, `/friends` (root redirects to `/profile`).
 - **`src/App.vue`** — sets the browser favicon dynamically from the Steam profile avatar via `usePlayerSummary`.
 
+### Styling
+
+Tailwind CSS v4 — configured via `@tailwindcss/vite` Vite plugin only. There is no `tailwind.config.js`; utility classes are available without any config file.
+
 ### Path alias
 
 `@` maps to `src/` (configured in `vite.config.ts`).
+
+### Testing
+
+Tests run in a `jsdom` environment (configured in `vitest.config.ts`). The standard pattern for mocking `fetch` is `vi.stubGlobal('fetch', mock)` — used in both test suites (`steamApi.spec.ts`, `steamFormatters.spec.ts`). No test setup file exists; each spec is self-contained.
 
 ### Linting
 
