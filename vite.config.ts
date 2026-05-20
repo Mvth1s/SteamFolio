@@ -34,7 +34,7 @@ export default defineConfig({
           // server.config.env contains VITE_* vars loaded from .env
           process.env.VITE_STEAM_API_KEY ??= server.config.env['VITE_STEAM_API_KEY']
 
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+           
           // @ts-expect-error -- api/steam.js is a plain JS Vercel handler with no type declarations
           const { default: handler } = await import('./api/steam.js')
           await handler(mockReq, mockRes)

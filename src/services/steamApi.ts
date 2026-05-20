@@ -1,4 +1,4 @@
-import type { SteamAchievement, SteamFriend, SteamOwnedGame, SteamPlayer } from '@/types/steam'
+import type { SteamAchievement, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame } from '@/types/steam'
 
 const steamId = import.meta.env.VITE_STEAM_ID
 
@@ -86,6 +86,11 @@ export async function getFriendsSummary(friendIds: string[]): Promise<SteamPlaye
   )
 
   return results.flat()
+}
+
+export async function getRecentlyPlayedGames(): Promise<SteamRecentGame[]> {
+  const data = await fetchSteamApi<{ response: { games?: SteamRecentGame[] } }>('IPlayerService/GetRecentlyPlayedGames/v1/')
+  return data.response.games ?? []
 }
 
 export async function getPlayerAchievements(appId: number): Promise<SteamAchievement[]> {

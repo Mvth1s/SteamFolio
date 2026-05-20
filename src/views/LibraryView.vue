@@ -2,15 +2,23 @@
 import { computed, onMounted, ref } from 'vue'
 import { getOwnedGames } from '@/services/steamApi'
 import type { LibrarySortOption, SteamOwnedGame } from '@/types/steam'
-import { buildGameIconUrl, formatPlaytime, sortAndFilterGames } from '@/utils/steamFormatters'
+import { sortAndFilterGames } from '@/utils/steamFormatters'
+import { useI18n } from '@/composables/useI18n'
+import { useSound } from '@/composables/useSound'
+import PixelIcon from '@/components/shared/PixelIcon.vue'
+
+const { t } = useI18n()
+const { click } = useSound()
 
 const games = ref<SteamOwnedGame[]>([])
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
-const sort = ref<LibrarySortOption>('name-asc')
+const sort = ref<LibrarySortOption>('playtime-desc')
 
-const filteredGames = computed(() => sortAndFilterGames(games.value, search.value, sort.value))
+const filtered = computed(() => sortAndFilterGames(games.value, search.value, sort.value))
+
+const totalHours = computed(() => Math.floor(games.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
 
 onMounted(async () => {
   try {
@@ -21,48 +29,91 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+function gameHeaderUrl(appId: number) {
+  return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
+}
+
+function formatHours(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  return h > 0 ? `${h}h` : `${minutes}m`
+}
+
+const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
+  { value: 'playtime-desc', labelKey: 'lib.byPlay' },
+  { value: 'name-asc',      labelKey: 'lib.alpha' },
+  { value: 'name-desc',     labelKey: 'Z → A' },
+  { value: 'playtime-asc',  labelKey: 'lib.recent' },
+]
 </script>
 
 <template>
-  <section class="rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-lg">
-    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-      <h2 class="text-xl font-semibold text-white">Game library</h2>
-
-      <div class="flex flex-wrap gap-2">
-        <input
-          v-model="search"
-          type="search"
-          placeholder="Filter games"
-          class="rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-        />
-
-        <select
-          v-model="sort"
-          class="rounded-md border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-        >
-          <option value="name-asc">Name (A-Z)</option>
-          <option value="name-desc">Name (Z-A)</option>
-          <option value="playtime-desc">Playtime (high-low)</option>
-          <option value="playtime-asc">Playtime (low-high)</option>
-        </select>
-      </div>
+  <div>
+    <div class="section-h">
+      <h2>{{ t('nav.library').toUpperCase() }}</h2>
+      <span class="meta">
+        <template v-if="!loading">
+          {{ games.length }} {{ t('lib.totalGames') }} · {{ totalHours.toLocaleString() }} {{ t('lib.totalHrs') }}
+        </template>
+      </span>
     </div>
 
-    <p v-if="loading" class="text-slate-300">Loading games...</p>
-    <p v-else-if="error" class="text-red-300">{{ error }}</p>
+    <div class="toolbar">
+      <div class="field">
+        <PixelIcon kind="search" :size="14" color="var(--text-mute)" />
+        <input
+          v-model="search"
+          :placeholder="t('lib.placeholder')"
+        />
+        <button
+          v-if="search"
+          class="muted mono"
+          style="font-size:11px"
+          @click="search = ''; click()"
+        >{{ t('common.clear') }}</button>
+      </div>
+      <button
+        v-for="opt in SORT_OPTIONS"
+        :key="opt.value"
+        class="chip"
+        :class="{ active: sort === opt.value }"
+        @click="sort = opt.value; click()"
+      >{{ t(opt.labelKey) }}</button>
+    </div>
 
-    <ul v-else class="space-y-2">
-      <li
-        v-for="game in filteredGames"
-        :key="game.appid"
-        class="flex items-center gap-3 rounded-md border border-slate-700 bg-slate-900 p-3"
-      >
-        <img :src="buildGameIconUrl(game.appid, game.img_icon_url)" :alt="`${game.name} icon`" class="h-10 w-10 rounded" />
-        <div class="min-w-0">
-          <p class="truncate font-medium text-slate-100">{{ game.name }}</p>
-          <p class="text-sm text-slate-300">{{ formatPlaytime(game.playtime_forever) }} played</p>
+    <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
+      Loading library…
+    </p>
+    <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
+
+    <template v-else>
+      <div v-if="filtered.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
+        {{ t('lib.noMatch') }} "{{ search }}".
+      </div>
+
+      <div v-else class="grid cards">
+        <div
+          v-for="game in filtered"
+          :key="game.appid"
+          class="game-card"
+        >
+          <div class="gcover">
+            <img
+              :src="gameHeaderUrl(game.appid)"
+              :alt="game.name"
+              loading="lazy"
+              style="width:100%;height:100%;object-fit:cover;display:block;"
+            />
+          </div>
+          <div class="ginfo">
+            <div class="gname">{{ game.name }}</div>
+            <div class="gmeta">
+              <span class="h">{{ formatHours(game.playtime_forever) }}</span>
+              <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">never played</span>
+            </div>
+          </div>
         </div>
-      </li>
-    </ul>
-  </section>
+      </div>
+    </template>
+  </div>
 </template>

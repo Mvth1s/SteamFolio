@@ -32,3 +32,11 @@ export interface SteamAchievement {
 }
 
 export type LibrarySortOption = 'name-asc' | 'name-desc' | 'playtime-asc' | 'playtime-desc'
+
+export interface SteamRecentGame {
+  appid: number
+  name: string
+  playtime_2weeks: number
+  playtime_forever: number
+  img_icon_url?: string
+}

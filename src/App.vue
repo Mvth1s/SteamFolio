@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { watch } from 'vue'
-import NavBar from '@/components/layout/NavBar.vue'
+import { ref, watch } from 'vue'
 import { RouterView } from 'vue-router'
+import Sidebar from '@/components/layout/Sidebar.vue'
+import Topbar from '@/components/layout/Topbar.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
+import { useTheme } from '@/composables/useTheme'
+import { useSound } from '@/composables/useSound'
 
 const { player } = usePlayerSummary()
+useTheme()  // initialize theme on startup
+useSound()
+
+const sidebarCollapsed = ref(false)
 
 watch(player, (p) => {
   if (!p?.avatarfull) return
@@ -16,11 +23,13 @@ watch(player, (p) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100">
-    <NavBar />
-
-    <main class="mx-auto max-w-6xl px-4 py-6">
-      <RouterView />
+  <div class="app" :class="{ collapsed: sidebarCollapsed }">
+    <Sidebar :collapsed="sidebarCollapsed" @toggle="sidebarCollapsed = !sidebarCollapsed" />
+    <main class="main">
+      <Topbar />
+      <div class="page">
+        <RouterView />
+      </div>
     </main>
   </div>
 </template>
