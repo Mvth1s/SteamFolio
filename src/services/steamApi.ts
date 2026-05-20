@@ -93,6 +93,17 @@ export async function getRecentlyPlayedGames(): Promise<SteamRecentGame[]> {
   return data.response.games ?? []
 }
 
+export async function getAchievementRarities(appId: number): Promise<Record<string, number>> {
+  const queryParams = new URLSearchParams({
+    gameid: String(appId),
+    steamEndpoint: 'ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/',
+  })
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
+  if (!response.ok) return {}
+  const data = (await response.json()) as { achievementpercentages?: { achievements: { name: string; percent: number }[] } }
+  return Object.fromEntries((data.achievementpercentages?.achievements ?? []).map(a => [a.name, a.percent]))
+}
+
 export async function getPlayerAchievements(appId: number): Promise<SteamAchievement[]> {
   const id = getConfigValue(steamId, 'VITE_STEAM_ID')
   const queryParams = new URLSearchParams({

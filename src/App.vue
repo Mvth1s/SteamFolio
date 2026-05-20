@@ -155,9 +155,10 @@ function dismissStale() {
 
     <!-- Cache stale banner -->
     <Teleport to="body">
-      <div v-if="showStaleBanner" style="position:fixed;top:0;left:0;right:0;z-index:7000;background:var(--bg-panel);border-bottom:1px solid var(--xp);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;font-family:var(--mono);">
-        <span style="color:var(--xp)">⚠ {{ t('cache.stale') }}</span>
-        <button style="font-family:var(--pixel);font-size:8px;color:var(--text-mute);letter-spacing:1px;" @click="dismissStale">{{ t('cache.dismiss').toUpperCase() }}</button>
+      <div v-if="showStaleBanner" class="sf-cache-banner">
+        <span class="ic">⚠</span>
+        <div class="msg"><b>{{ t('cache.stale') }}</b></div>
+        <button class="dismiss" @click="dismissStale">{{ t('cache.dismiss').toUpperCase() }}</button>
       </div>
     </Teleport>
 

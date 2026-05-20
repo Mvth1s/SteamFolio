@@ -89,6 +89,10 @@ onMounted(async () => {
         :class="{ active: filter === key }"
         @click="filter = key as typeof filter; click()"
       >{{ label }}</button>
+      <div style="flex:1" />
+      <button class="chip" style="color:var(--accent);border-color:var(--accent-dim)" @click="click()">
+        {{ t('friends.addFriend') }}
+      </button>
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">

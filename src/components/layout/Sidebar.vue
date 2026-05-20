@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import PixelAvatar from '@/components/shared/PixelAvatar.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
+import { getSteamLevel } from '@/services/steamApi'
 
 defineProps<{ collapsed: boolean }>()
 defineEmits<{ toggle: [] }>()
@@ -16,6 +18,12 @@ const route = useRoute()
 const { player } = usePlayerSummary()
 const { t } = useI18n()
 const { hover, nav } = useSound()
+
+const steamLevel = ref<number | null>(null)
+
+onMounted(async () => {
+  try { steamLevel.value = await getSteamLevel() } catch { /* non-critical */ }
+})
 
 const NAV_ITEMS = [
   { to: '/dashboard',    name: 'dashboard',    icon: 'dashboard',   labelKey: 'nav.dashboard' },
@@ -72,6 +80,30 @@ function navigate(to: string) {
         </span>
         <span>{{ t(item.labelKey) }}</span>
       </button>
+
+      <div class="nav-section-label" style="margin-top:14px">{{ t('nav.quick') }}</div>
+      <a
+        :href="player ? `https://store.steampowered.com/wishlist/profiles/${player.steamid}/` : '#'"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="nav-item"
+        :data-label="t('nav.wishlist')"
+        @mouseenter="hover()"
+      >
+        <span class="nav-icon"><PixelIcon kind="star" :size="18" color="currentColor" /></span>
+        <span>{{ t('nav.wishlist') }}</span>
+      </a>
+      <a
+        :href="player ? `${player.profileurl}recommended/` : '#'"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="nav-item"
+        :data-label="t('nav.reviews')"
+        @mouseenter="hover()"
+      >
+        <span class="nav-icon"><PixelIcon kind="chart" :size="18" color="currentColor" /></span>
+        <span>{{ t('nav.reviews') }}</span>
+      </a>
     </nav>
 
     <div class="sidebar-footer">
@@ -81,7 +113,7 @@ function navigate(to: string) {
           <div class="pc-name">{{ player?.personaname ?? '…' }}</div>
           <div class="pc-status">
             <span class="dot" />
-            <span>{{ t('common.online') }}</span>
+            <span>{{ t('common.online') }}<template v-if="steamLevel !== null"> · LVL {{ steamLevel }}</template></span>
           </div>
         </div>
       </div>
