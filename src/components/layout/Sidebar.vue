@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import PixelAvatar from '@/components/shared/PixelAvatar.vue'
+import BrandMark from '@/components/shared/BrandMark.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
@@ -50,10 +51,7 @@ function navigate(to: string) {
     </button>
 
     <div class="brand">
-      <div
-        class="brand-mark"
-        style="width:36px;height:36px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:9px;color:var(--bg-deep);letter-spacing:1px;flex-shrink:0;"
-      >SF</div>
+      <BrandMark :size="36" style="flex-shrink:0" />
       <div class="brand-name">
         STEAM<br />FOLIO
         <small>{{ t('common.beta') }}</small>
