@@ -55,3 +55,9 @@ export interface SteamRecentGame {
   playtime_forever: number
   img_icon_url?: string
 }
+
+export interface SteamWishlistItem {
+  appid: number
+  priority: number
+  date_added: number
+}
