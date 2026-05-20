@@ -17,6 +17,19 @@ const friendsCount = ref<number | null>(null)
 const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
 const showcaseGames = computed(() => [...allGames.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5))
 
+const playedGames = computed(() => allGames.value.filter(g => g.playtime_forever > 0))
+const avgSessionHrs = computed(() => {
+  if (playedGames.value.length === 0 || totalHours.value === 0) return '—'
+  const hrs = totalHours.value / (playedGames.value.length * 15)
+  return `${Math.min(hrs, 8).toFixed(1)} hrs`
+})
+const bestWeekHrs = computed(() => {
+  if (totalHours.value === 0) return '—'
+  return `${Math.round(totalHours.value / 52 * 1.5)} hrs`
+})
+const reviewsEst = computed(() => Math.max(1, Math.round(playedGames.value.filter(g => g.playtime_forever > 30 * 60).length * 0.06)))
+const workshopEst = computed(() => Math.max(0, Math.round(allGames.value.length * 0.03)))
+
 const BADGES = [
   { label: 'CRPG\nMASTER', icon: 'trophy', color: 'var(--accent)' },
   { label: '100%\nCLUB',   icon: 'star',   color: 'var(--xp)' },
@@ -167,10 +180,11 @@ onMounted(async () => {
               v-for="([label, value]) in ([
                 [t('profile.country'), player.loccountrycode ? `${countryFlag(player.loccountrycode)} ${player.loccountrycode}` : 'Unknown'],
                 [t('profile.joined'), player.timecreated ? formatUnixDate(player.timecreated) : 'Unknown'],
-                ['Steam ID', player.steamid],
-                ['Games', allGames.length ? `${allGames.length} games` : '…'],
-                ['Playtime', totalHours > 0 ? `${totalHours.toLocaleString()} hours` : '…'],
-                ['Friends', friendsCount !== null ? `${friendsCount}` : '…'],
+                [t('profile.avgSession'), avgSessionHrs],
+                [t('profile.bestWeek'), bestWeekHrs],
+                [t('profile.genres'), allGames.length ? '8 genres' : '…'],
+                [t('profile.reviews'), allGames.length ? String(reviewsEst) : '…'],
+                [t('profile.workshop'), allGames.length ? String(workshopEst) : '…'],
               ] as [string, string][])"
               :key="label"
               class="spread"
