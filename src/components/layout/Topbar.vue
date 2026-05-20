@@ -10,12 +10,13 @@ import { useSound } from '@/composables/useSound'
 import type { ThemeKey } from '@/types/design'
 
 defineOptions({ name: 'TopBar' })
+const emit = defineEmits<{ search: [] }>()
 
 const route = useRoute()
 const { player } = usePlayerSummary()
 const { themeKey, setTheme } = useTheme()
 const { t, lang, setLang } = useI18n()
-const { click, open } = useSound()
+const { click, open, muted, setMuted } = useSound()
 
 const themeOpen = ref(false)
 const themeRef = ref<HTMLElement | null>(null)
@@ -58,13 +59,21 @@ function toggleLang() {
       <div class="crumb">STEAMFOLIO / {{ t(pageInfo.crumbKey) }}</div>
     </div>
 
-    <div class="search">
+    <div class="search" style="cursor:pointer" @click="emit('search')">
       <PixelIcon kind="search" :size="14" color="var(--text-mute)" />
-      <input readonly :placeholder="t('common.search')" style="cursor:default" />
+      <input readonly :placeholder="t('common.search')" style="cursor:pointer;pointer-events:none" />
       <span style="font-family:var(--pixel);font-size:7px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft);">⌘K</span>
     </div>
 
     <div class="tb-actions">
+      <button
+        class="tb-btn"
+        :title="muted ? t('sound.unmute') : t('sound.mute')"
+        @click="setMuted(!muted); click()"
+      >
+        <span style="font-size:14px">{{ muted ? '🔇' : '🔊' }}</span>
+      </button>
+
       <button
         class="tb-btn"
         style="font-family:var(--pixel);font-size:9px;"
