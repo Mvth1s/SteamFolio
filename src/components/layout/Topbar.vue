@@ -15,7 +15,7 @@ const route = useRoute()
 const { player } = usePlayerSummary()
 const { themeKey, setTheme } = useTheme()
 const { t, lang, setLang } = useI18n()
-const { click, open, muted, setMuted } = useSound()
+const { click, open, muted, setMuted, setTheme: setSoundTheme } = useSound()
 
 const themeOpen = ref(false)
 const themeRef = ref<HTMLElement | null>(null)
@@ -38,11 +38,15 @@ function onDocClick(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener('mousedown', onDocClick))
+onMounted(() => {
+  document.addEventListener('mousedown', onDocClick)
+  setSoundTheme(themeKey.value)
+})
 onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 
 function pickTheme(key: ThemeKey) {
   setTheme(key)
+  setSoundTheme(key)
   themeOpen.value = false
   open()
 }

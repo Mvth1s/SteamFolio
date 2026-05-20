@@ -45,9 +45,22 @@ function gameHeaderUrl(appId: number) {
 
 function badgeIconUrl(badge: SteamBadge): string {
   if (badge.appid) {
-    return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/icon.jpg`
+    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/capsule_184x69.jpg`
   }
   return `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}_card.png`
+}
+
+function onBadgeImgError(e: Event) {
+  const img = e.target as HTMLImageElement
+  img.style.display = 'none'
+  const parent = img.parentElement
+  if (parent && !parent.querySelector('.badge-fallback')) {
+    const fb = document.createElement('div')
+    fb.className = 'badge-fallback'
+    fb.style.cssText = 'width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.5'
+    fb.textContent = '🏅'
+    parent.prepend(fb)
+  }
 }
 
 const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
@@ -171,9 +184,9 @@ onMounted(async () => {
               <img
                 :src="badgeIconUrl(badge)"
                 loading="lazy"
-                style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated"
+                :style="badge.appid ? 'width:56px;height:auto;object-fit:cover;border-radius:1px' : 'width:36px;height:36px;object-fit:contain;image-rendering:pixelated'"
                 :alt="`Badge ${badge.badgeid}`"
-                @error="($event.target as HTMLImageElement).style.display='none'"
+                @error="onBadgeImgError"
               />
               <div style="font-family:var(--pixel);font-size:6px;letter-spacing:0.5px;text-align:center;line-height:1.4" :style="{ color: badgeColor(i) }">
                 LVL {{ badge.level }}
