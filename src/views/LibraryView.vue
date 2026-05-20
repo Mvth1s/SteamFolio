@@ -114,10 +114,14 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
       </div>
 
       <div v-else class="grid cards">
-        <div
+        <a
           v-for="game in filtered"
           :key="game.appid"
           class="game-card"
+          :href="`https://store.steampowered.com/app/${game.appid}/`"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="text-decoration:none;color:inherit"
         >
           <div class="gcover">
             <img
@@ -138,7 +142,7 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
               <span style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)">{{ genreFromName(game.name) }}</span>
             </div>
           </div>
-        </div>
+        </a>
       </div>
     </template>
   </div>

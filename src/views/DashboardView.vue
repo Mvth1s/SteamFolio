@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import InfoTip from '@/components/shared/InfoTip.vue'
-import { getOwnedGames, getFriends, getRecentlyPlayedGames } from '@/services/steamApi'
+import { getOwnedGames, getFriends, getRecentlyPlayedGames, getStoreGenres } from '@/services/steamApi'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
@@ -16,6 +16,7 @@ const games = ref<SteamOwnedGame[]>([])
 const recent = ref<SteamRecentGame[]>([])
 const friendsCount = ref<number | null>(null)
 const loading = ref(true)
+const realGenreMap = ref<Map<string, number> | null>(null)
 
 onMounted(async () => {
   const [g, f, r] = await Promise.allSettled([getOwnedGames(), getFriends(), getRecentlyPlayedGames()])
@@ -23,6 +24,23 @@ onMounted(async () => {
   if (f.status === 'fulfilled') friendsCount.value = f.value.length
   if (r.status === 'fulfilled') recent.value = r.value
   loading.value = false
+
+  // Background: fetch genres from Steam Store for top 10 played games
+  if (g.status === 'fulfilled' && g.value.length > 0) {
+    const top10 = [...g.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 10)
+    Promise.all(top10.map(async game => ({
+      game,
+      genres: await getStoreGenres(game.appid),
+    }))).then(results => {
+      const map = new Map<string, number>()
+      for (const { game, genres } of results) {
+        for (const genre of genres) {
+          map.set(genre, (map.get(genre) ?? 0) + Math.floor(game.playtime_forever / 60))
+        }
+      }
+      if (map.size > 0) realGenreMap.value = map
+    }).catch(() => {})
+  }
 })
 
 const totalHours = computed(() => Math.floor(games.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
@@ -55,18 +73,20 @@ const lastPlayedGame = computed(() => recent.value[0] ?? null)
 const sessionStartMs = computed(() => Number(localStorage.getItem('sf-last-sync') ?? Date.now()))
 const sessionElapsed = computed(() => Math.max(0, Math.floor((nowMs.value - sessionStartMs.value) / 1000)))
 
-// ——— MOCK: genre donut (seeded from total hours to look plausible) ———
 const GENRE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)', 'var(--bad)']
-const GENRE_NAMES = ['RPG', 'Action', 'Strategy', 'Indie', 'Adventure']
 const genreData = computed(() => {
   if (totalHours.value === 0) return []
-  const base = totalHours.value
-  const weights = [0.38, 0.27, 0.18, 0.11, 0.06]
-  return GENRE_NAMES.map((name, i) => ({
-    name,
-    hours: Math.round(base * weights[i]!),
-    color: GENRE_COLORS[i]!,
-  }))
+  // Use real genre data once fetched, otherwise show placeholder bars
+  if (realGenreMap.value && realGenreMap.value.size > 0) {
+    return [...realGenreMap.value.entries()]
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, hours], i) => ({ name, hours, color: GENRE_COLORS[i]! }))
+  }
+  // Loading placeholder (proportional bars until real data arrives)
+  return [
+    { name: '…', hours: totalHours.value, color: GENRE_COLORS[0]! },
+  ]
 })
 const genreTotal = computed(() => genreData.value.reduce((s, g) => s + g.hours, 0))
 
@@ -280,14 +300,23 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
       </div>
       <div v-if="loading" style="padding:40px;text-align:center;color:var(--text-mute)">Loading…</div>
       <div v-else-if="top3Games.length" class="top3-grid">
-        <div v-for="(game, i) in top3Games" :key="game.appid" class="top3-card" :class="`rank-${i + 1}`">
+        <a
+          v-for="(game, i) in top3Games"
+          :key="game.appid"
+          class="top3-card"
+          :class="`rank-${i + 1}`"
+          :href="`https://store.steampowered.com/app/${game.appid}/`"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="text-decoration:none;color:inherit"
+        >
           <span class="rank-num">#{{ i + 1 }}</span>
           <div class="top3-cover" style="overflow:hidden">
             <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" />
           </div>
           <div class="top3-name">{{ game.name }}</div>
           <div class="top3-hours">{{ Math.floor(game.playtime_forever / 60) }}<span>h</span></div>
-        </div>
+        </a>
       </div>
     </div>
 
