@@ -33,7 +33,7 @@ export interface SteamAchievement {
   icongray?: string
 }
 
-export type LibrarySortOption = 'name-asc' | 'name-desc' | 'playtime-asc' | 'playtime-desc'
+export type LibrarySortOption = 'name-asc' | 'name-desc' | 'playtime-asc' | 'playtime-desc' | 'recent'
 
 export interface SteamRecentGame {
   appid: number

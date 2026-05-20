@@ -65,7 +65,7 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
   { value: 'playtime-desc', labelKey: 'lib.byPlay' },
   { value: 'name-asc',      labelKey: 'lib.alpha' },
   { value: 'name-desc',     labelKey: 'Z → A' },
-  { value: 'playtime-asc',  labelKey: 'lib.recent' },
+  { value: 'recent',        labelKey: 'lib.recent' },
 ]
 </script>
 
