@@ -149,7 +149,7 @@ function formatUnlockDate(ts: number): string {
           <PixelIcon kind="library" :size="14" color="var(--text-mute)" />
           <select
             v-model.number="selectedGameId"
-            style="background:none;border:none;outline:none;flex:1;color:var(--text);font:inherit;cursor:pointer"
+            style="background:var(--bg-deep);border:none;outline:none;flex:1;color:var(--text);font:inherit;cursor:pointer;padding:2px 0"
             @change="click()"
           >
             <option v-for="game in games" :key="game.appid" :value="game.appid">
@@ -210,7 +210,7 @@ function formatUnlockDate(ts: number): string {
               </div>
               <div class="dur" :style="{ color: ach.achieved === 1 ? 'var(--xp)' : 'var(--text-mute)' }">
                 <template v-if="rarities[ach.apiname] !== undefined">
-                  {{ (rarities[ach.apiname] ?? 0).toFixed(1) }}%
+                  {{ Number(rarities[ach.apiname] ?? 0).toFixed(1) }}%
                   <small>{{ t('ach.rarity') }}</small>
                 </template>
                 <template v-else>
@@ -252,7 +252,7 @@ function formatUnlockDate(ts: number): string {
                   :style="{ color: (rarities[ach.apiname] ?? 100) < 10 ? 'var(--rare)' : 'var(--accent)' }"
                 >
                   <template v-if="rarities[ach.apiname] !== undefined">
-                    {{ (rarities[ach.apiname] ?? 0).toFixed(1) }}%
+                    {{ Number(rarities[ach.apiname] ?? 0).toFixed(1) }}%
                   </template>
                   <template v-else>✓</template>
                   <small>{{ t('ach.rarity') }}</small>

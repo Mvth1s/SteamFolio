@@ -122,11 +122,6 @@ const maxBar = computed(() => Math.max(...weeklyBars.value.map(w => w.h), 1))
 const dlcEstimate = computed(() => Math.round(games.value.length * 0.25))
 const dlcTotal = computed(() => games.value.length + dlcEstimate.value)
 
-// ——— Achievement gauge (mock at 28% — realistic for most Steam accounts) ———
-const ACH_RATE = 0.284
-const ACH_TOTAL_EST = computed(() => Math.round(games.value.length * 8.2))
-const ACH_UNLOCKED_EST = computed(() => Math.round(ACH_TOTAL_EST.value * ACH_RATE))
-
 
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
 
@@ -362,38 +357,23 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
       </div>
 
-      <!-- Achievement gauge -->
+      <!-- Achievements link card -->
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="pcard">
-          <div class="pcard-h">
+        <div class="pcard" style="display:flex;flex-direction:column;align-items:flex-start;padding:20px;gap:14px">
+          <div class="pcard-h" style="padding:0;border:none">
             <PixelIcon kind="trophy" :size="14" color="var(--accent)" />
-            <span class="label" style="display:inline-flex;align-items:center">
-              {{ t('dash.achRate') }}
-              <InfoTip :content="t('tip.achRate')" />
-            </span>
-            <span class="sub">~{{ ACH_UNLOCKED_EST.toLocaleString() }} / {{ ACH_TOTAL_EST.toLocaleString() }}</span>
+            <span class="label">{{ t('nav.achievements').toUpperCase() }}</span>
           </div>
-          <div class="gauge">
-            <div class="gauge-arc" :style="{
-              background: `conic-gradient(from 270deg, var(--accent) 0deg ${ACH_RATE * 180}deg, var(--bg-panel) ${ACH_RATE * 180}deg 180deg, transparent 180deg)`
-            }">
-              <div class="gauge-inner">
-                <div class="gauge-val">{{ (ACH_RATE * 100).toFixed(1) }}<span>%</span></div>
-                <div class="gauge-sub">{{ t('dash.global') }}</div>
-              </div>
-            </div>
-            <div class="gauge-label">{{ t('dash.nextMilestone') }}</div>
-          </div>
-          <div style="padding:0 20px 18px">
-            <div class="pbar"><i :style="{ width: `${ACH_RATE * 100}%` }" /></div>
-            <div class="spread" style="margin-top:12px;font-size:11px;color:var(--text-mute);font-family:var(--mono)">
-              <span>{{ t('dash.nextMilestone') }}</span>
-              <span>{{ Math.round((0.40 - ACH_RATE) * ACH_TOTAL_EST) }} {{ t('dash.toGo') }}</span>
-            </div>
-          </div>
+          <p style="font-size:12px;color:var(--text-mute);line-height:1.7;margin:0">
+            {{ t('dash.achRate') }}, {{ t('ach.rare').toLowerCase() }} {{ t('ach.rarity').toLowerCase() }}, {{ t('ach.recentUnlocks').toLowerCase() }} — {{ t('ach.byGame').toLowerCase() }}.
+          </p>
+          <router-link
+            to="/achievements"
+            style="font-family:var(--pixel);font-size:8px;color:var(--accent);padding:8px 14px;border:1px solid var(--accent-dim);letter-spacing:1px;text-decoration:none"
+          >{{ t('nav.achievements').toUpperCase() }} →</router-link>
         </div>
 
-        <!-- Rarest achievement placeholder card -->
+        <!-- Rarest achievement -->
         <div class="pcard rare-card">
           <div class="rare-icon">
             <div style="position:absolute;inset:8px;background:radial-gradient(circle,var(--rare) 0%,var(--rare-dim) 60%,transparent 100%)" />
@@ -407,8 +387,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
                 {{ t('dash.rarest') }}
               </span>
             </div>
-            <div class="rtitle" style="margin-top:8px">— · check Achievements tab</div>
-            <div class="rmeta">{{ t('dash.achRate') }} · {{ (ACH_RATE * 100).toFixed(1) }}%</div>
+            <div class="rtitle" style="margin-top:8px">— · {{ t('nav.achievements') }}</div>
           </div>
         </div>
       </div>

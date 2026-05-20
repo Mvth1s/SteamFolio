@@ -240,12 +240,6 @@ onMounted(async () => {
               <span class="muted" style="font-size:12px">{{ label }}</span>
               <span class="mono" style="font-size:12px;color:var(--text)">{{ value }}</span>
             </div>
-            <a
-              :href="player.profileurl"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="font-family:var(--pixel);font-size:8px;color:var(--accent);padding:8px 14px;border:1px solid var(--accent-dim);letter-spacing:1px;text-align:center;margin-top:4px;"
-            >VIEW ON STEAM ↗</a>
           </div>
         </div>
       </div>

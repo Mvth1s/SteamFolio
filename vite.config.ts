@@ -19,32 +19,40 @@ export default defineConfig({
     {
       name: 'steam-api-dev',
       configureServer(server) {
-        server.middlewares.use('/api/steam', async (req, res) => {
-          const url = req.url ?? ''
-          const queryString = url.includes('?') ? url.slice(url.indexOf('?') + 1) : ''
-          const searchParams = new URLSearchParams(queryString)
-          const query: Record<string, string> = {}
-          searchParams.forEach((value, key) => { query[key] = value })
+        function makeHandler(path: string, importFn: () => Promise<{ default: (req: unknown, res: unknown) => Promise<void> }>) {
+          server.middlewares.use(path, async (req, res) => {
+            const url = req.url ?? ''
+            const queryString = url.includes('?') ? url.slice(url.indexOf('?') + 1) : ''
+            const searchParams = new URLSearchParams(queryString)
+            const query: Record<string, string> = {}
+            searchParams.forEach((value, key) => { query[key] = value })
 
-          const mockReq = { method: req.method, url, query }
-          let statusCode = 200
-          const mockRes = {
-            setHeader: (name: string, value: string) => res.setHeader(name, value),
-            status(code: number) { statusCode = code; return mockRes },
-            json(data: unknown) {
-              res.writeHead(statusCode, { 'Content-Type': 'application/json' })
-              res.end(JSON.stringify(data))
-            },
-          }
+            const mockReq = { method: req.method, url, query }
+            let statusCode = 200
+            const mockRes = {
+              setHeader: (name: string, value: string) => res.setHeader(name, value),
+              status(code: number) { statusCode = code; return mockRes },
+              json(data: unknown) {
+                res.writeHead(statusCode, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify(data))
+              },
+            }
 
-          // server.config.env contains VITE_* vars loaded from .env
+            const { default: handler } = await importFn()
+            await handler(mockReq, mockRes)
+          })
+        }
+
+        // server.config.env contains VITE_* vars loaded from .env
+        server.middlewares.use((req, _res, next) => {
           process.env.VITE_STEAM_API_KEY ??= server.config.env['VITE_STEAM_API_KEY']
-
-           
-          // @ts-expect-error -- api/steam.js is a plain JS Vercel handler with no type declarations
-          const { default: handler } = await import('./api/steam.js')
-          await handler(mockReq, mockRes)
+          next()
         })
+
+        // @ts-expect-error -- api/*.js are plain JS Vercel handlers without type declarations
+        makeHandler('/api/steam', () => import('./api/steam.js'))
+        // @ts-expect-error -- api/*.js are plain JS Vercel handlers without type declarations
+        makeHandler('/api/store', () => import('./api/store.js'))
       },
     },
   ],

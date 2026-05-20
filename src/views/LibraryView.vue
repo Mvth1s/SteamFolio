@@ -39,17 +39,6 @@ function formatHours(minutes: number): string {
   return h > 0 ? `${h}h` : `${minutes}m`
 }
 
-const GENRES = ['RPG', 'ACTION', 'STRATEGY', 'INDIE', 'ADVENTURE', 'SIMULATION', 'SPORTS', 'PUZZLE']
-
-function genreFromName(name: string): string {
-  let h = 2166136261 >>> 0
-  for (let i = 0; i < name.length; i++) {
-    h ^= name.charCodeAt(i)
-    h = Math.imul(h, 16777619) >>> 0
-  }
-  return GENRES[h % GENRES.length]!
-}
-
 function formatLastPlayed(ts: number): string {
   if (!ts) return ''
   const days = Math.floor((Date.now() / 1000 - ts) / 86400)
@@ -137,9 +126,6 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
               <span class="h">{{ formatHours(game.playtime_forever) }}</span>
               <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">never played</span>
               <span v-else-if="game.rtime_last_played" style="color:var(--text-mute)">{{ formatLastPlayed(game.rtime_last_played) }}</span>
-            </div>
-            <div class="gmeta" style="margin-top:4px">
-              <span style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)">{{ genreFromName(game.name) }}</span>
             </div>
           </div>
         </a>

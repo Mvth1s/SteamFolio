@@ -103,11 +103,10 @@ export async function getBadges(): Promise<SteamBadge[]> {
   return data.response.badges ?? []
 }
 
-// Calls the Steam Store API directly (CORS-enabled, no key required)
 export async function getStoreGenres(appId: number): Promise<string[]> {
   try {
     const params = new URLSearchParams({ appids: String(appId), filters: 'genres', l: 'english' })
-    const res = await fetch(`https://store.steampowered.com/api/appdetails?${params}`)
+    const res = await fetch(`/api/store?${params}`)
     if (!res.ok) return []
     const data = (await res.json()) as Record<string, { success: boolean; data?: { genres?: { id: string; description: string }[] } }>
     return data[String(appId)]?.data?.genres?.map(g => g.description) ?? []
@@ -119,7 +118,7 @@ export async function getStoreGenres(appId: number): Promise<string[]> {
 export async function getScreenshots(): Promise<SteamScreenshot[]> {
   const data = await fetchSteamApi<{ response?: { publishedfiledetails?: SteamScreenshot[] } }>(
     'IPublishedFileService/GetUserFiles/v1/',
-    { type: '2', appid: '0', numperpage: '50', return_metadata: '1' },
+    { type: '5', appid: '0', numperpage: '50', return_metadata: '1' },
   )
   return data.response?.publishedfiledetails ?? []
 }
