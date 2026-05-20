@@ -20,6 +20,7 @@ const { player } = usePlayerSummary()
 const { t } = useI18n()
 const { hover, nav } = useSound()
 
+const appVersion = __APP_VERSION__
 const steamLevel = ref<number | null>(null)
 const { friends, load: loadFriends } = useFriends()
 const onlineFriendsCount = computed(() =>
@@ -59,7 +60,7 @@ function navigate(to: string) {
       <BrandMark :size="36" style="flex-shrink:0" />
       <div class="brand-name">
         STEAM<br />FOLIO
-        <small>{{ t('common.beta') }}</small>
+        <small>v{{ appVersion }}</small>
       </div>
     </div>
 
