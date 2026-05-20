@@ -43,11 +43,17 @@ export function sortAndFilterGames(
           return a.playtime_forever - b.playtime_forever
         case 'playtime-desc':
           return b.playtime_forever - a.playtime_forever
+        case 'recent':
+          return (b.rtime_last_played ?? 0) - (a.rtime_last_played ?? 0)
         case 'name-asc':
         default:
           return a.name.localeCompare(b.name)
       }
     })
+}
+
+export function buildGameHeaderUrl(appId: number): string {
+  return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
 }
 
 export function buildGameIconUrl(appId: number, iconHash?: string): string {
