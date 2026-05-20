@@ -125,6 +125,7 @@ const FRIEND_PINS = [
   { x: 4, y: 5, label: 'NA · 3 friends' },
   { x: 22, y: 4, label: 'AS · 2 friends' },
 ]
+const hoveredPin = ref<string | null>(null)
 
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
 
@@ -414,11 +415,14 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
               v-for="pin in FRIEND_PINS"
               :key="pin.label"
               class="wm-pin"
+              :class="{ hot: hoveredPin === pin.label }"
               :style="`left:${(pin.x / 30) * 100}%;top:${(pin.y / 16) * 100}%`"
+              @mouseenter="hoveredPin = pin.label"
+              @mouseleave="hoveredPin = null"
             >
               <span class="wm-dot" />
               <span class="wm-ring" />
-              <span class="wm-label">{{ pin.label }}</span>
+              <span v-if="hoveredPin === pin.label" class="wm-label">{{ pin.label }}</span>
             </div>
           </div>
         </div>
