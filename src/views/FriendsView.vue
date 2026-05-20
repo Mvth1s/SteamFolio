@@ -128,12 +128,6 @@ onMounted(async () => {
             <span class="dot" :style="dotStyle(friend.personastate)" />
             <span>{{ getStatusLabel(friend.personastate) }}</span>
           </div>
-          <a
-            :href="friend.profileurl"
-            target="_blank"
-            rel="noopener noreferrer"
-            style="font-family:var(--pixel);font-size:7px;color:var(--accent);letter-spacing:1px;margin-top:6px;display:inline-block;"
-          >VIEW ↗</a>
         </div>
       </div>
     </div>
