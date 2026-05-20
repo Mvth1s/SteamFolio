@@ -256,7 +256,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
       <div class="cp-meta">
         <div class="cp-label">{{ t('dash.lastPlayed') }}</div>
         <div class="cp-game">{{ lastPlayedGame.name }}</div>
-        <div class="cp-timer">{{ formatHours(lastPlayedGame.playtime_2weeks) }}<span style="font-size:14px;color:var(--text-mute)"> {{ t('dash.last2weeks') }}</span></div>
+        <div class="cp-timer">{{ formatHours(lastPlayedGame.playtime_2weeks) }}<span style="font-size:14px;color:var(--text-mute)"> · {{ t('dash.last2weeks') }}</span></div>
         <div class="cp-foot">{{ formatHours(lastPlayedGame.playtime_forever) }} {{ t('dash.hrsTotal') }}</div>
       </div>
     </div>

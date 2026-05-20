@@ -187,9 +187,26 @@ function formatUnlockDate(ts: number): string {
       <p v-if="loadingAch" style="color:var(--text-mute);padding:20px;text-align:center;font-family:var(--pixel);font-size:10px;">
         {{ t('ach.loadingAch') }}
       </p>
-      <p v-else-if="achievements.length === 0" style="color:var(--text-mute);padding:20px;text-align:center;">
-        {{ t('ach.noAch') }}
-      </p>
+      <div v-else-if="achievements.length === 0 && selectedGame" class="pcard" style="overflow:hidden;margin-bottom:16px">
+        <div style="position:relative;height:160px;overflow:hidden">
+          <img
+            :src="libraryUrl(selectedGame.appid)"
+            :alt="selectedGame.name"
+            style="width:100%;height:100%;object-fit:cover;filter:blur(6px) brightness(0.25);transform:scale(1.08)"
+            @error="($event.target as HTMLImageElement).src = gameHeaderUrl(selectedGame!.appid)"
+          />
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+            <PixelIcon kind="trophy" :size="36" color="var(--text-mute)" style="opacity:0.4" />
+            <div style="font-family:var(--pixel);font-size:9px;letter-spacing:2px;color:var(--text-mute)">
+              {{ t('ach.noAch').toUpperCase() }}
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 20px;text-align:center">
+          <div style="font-size:12px;font-weight:600;margin-bottom:6px">{{ selectedGame.name }}</div>
+          <div style="font-size:11px;color:var(--text-mute);line-height:1.6">{{ t('ach.noAchDesc') }}</div>
+        </div>
+      </div>
 
       <!-- Achievement list -->
       <div v-else>

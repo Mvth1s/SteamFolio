@@ -39,25 +39,27 @@ function formatHours(minutes: number): string {
   return h > 0 ? `${h}h` : `${minutes}m`
 }
 
-// Genre lazy-loading: fetch genres progressively for visible cards (throttled)
+// Genre lazy-loading: fetch genres in parallel batches for all visible cards
 const genreCache = reactive(new Map<number, string[]>())
 let genreLoadTimer: ReturnType<typeof setTimeout> | null = null
 
 async function loadGenresFor(appids: number[]) {
   const toLoad = appids.filter(id => !genreCache.has(id))
-  for (const appid of toLoad.slice(0, 30)) {
-    await new Promise(r => setTimeout(r, 200))
-    try {
-      const genres = await getStoreGenres(appid)
-      genreCache.set(appid, genres)
-    } catch { genreCache.set(appid, []) }
+  const BATCH = 5
+  for (let i = 0; i < toLoad.length; i += BATCH) {
+    await Promise.all(toLoad.slice(i, i + BATCH).map(async appid => {
+      try {
+        genreCache.set(appid, await getStoreGenres(appid))
+      } catch { genreCache.set(appid, []) }
+    }))
+    if (i + BATCH < toLoad.length) await new Promise(r => setTimeout(r, 300))
   }
 }
 
 watch(filtered, (games) => {
   if (genreLoadTimer) clearTimeout(genreLoadTimer)
   genreLoadTimer = setTimeout(() => {
-    void loadGenresFor(games.slice(0, 30).map(g => g.appid))
+    void loadGenresFor(games.map(g => g.appid))
   }, 300)
 }, { immediate: true })
 
