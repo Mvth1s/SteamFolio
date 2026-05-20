@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { getSteamLevel, getOwnedGames, getFriends, getBadges } from '@/services/steamApi'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { getSteamLevel, getOwnedGames, getFriends, getBadges, getItemIconHashes } from '@/services/steamApi'
 import type { SteamBadge } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
@@ -15,6 +15,7 @@ const steamLevel = ref<number | null>(null)
 const allGames = ref<SteamOwnedGame[]>([])
 const friendsCount = ref<number | null>(null)
 const badges = ref<SteamBadge[]>([])
+const badgeIconHashes = reactive(new Map<string, string>())
 
 const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
 const showcaseGames = computed(() => [...allGames.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5))
@@ -53,22 +54,20 @@ const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)'
 function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
 
 function badgeImageUrl(badge: SteamBadge): string {
-  if (badge.appid) {
-    if (badge.communityitemid)
-      return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/${badge.communityitemid}.png`
-    return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/badge_${badge.level}.png`
+  if (badge.appid && badge.communityitemid) {
+    const iconHash = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
+    if (iconHash)
+      return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/${badge.appid}/${iconHash}.png`
   }
+  if (badge.appid)
+    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
   return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}.png`
 }
 
-function handleBadgeImgError(event: Event, badge: SteamBadge) {
+function handleBadgeImgError(event: Event) {
   const img = event.target as HTMLImageElement
   img.onerror = null
-  if (badge.appid) {
-    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
-  } else {
-    img.style.display = 'none'
-  }
+  img.style.display = 'none'
 }
 
 onMounted(async () => {
@@ -82,8 +81,15 @@ onMounted(async () => {
   if (games.status === 'fulfilled') allGames.value = games.value
   if (friends.status === 'fulfilled') friendsCount.value = friends.value.length
   if (bdgs.status === 'fulfilled') {
-    // Sort by XP desc, take top 8
     badges.value = [...bdgs.value].sort((a, b) => b.xp - a.xp).slice(0, 8)
+    // Background: fetch item icon hashes for each unique game that has a badge
+    const appIds = [...new Set(badges.value.filter(b => b.appid && b.communityitemid).map(b => b.appid!))]
+    Promise.all(appIds.map(async appId => {
+      const hashes = await getItemIconHashes(appId)
+      for (const [itemdefid, iconHash] of Object.entries(hashes)) {
+        badgeIconHashes.set(`${appId}:${itemdefid}`, iconHash)
+      }
+    })).catch(() => {})
   }
 })
 </script>
@@ -209,7 +215,7 @@ onMounted(async () => {
                 loading="lazy"
                 style="width:56px;height:56px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
-                @error="handleBadgeImgError($event, badge)"
+                @error="handleBadgeImgError($event)"
               />
               <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.5;padding:0 2px" :style="{ color: badgeColor(i) }">
                 {{ badgeGameName(badge) || `#${badge.badgeid}` }}

@@ -79,6 +79,9 @@ watch(selectedGameId, (appId) => {
 function gameHeaderUrl(appId: number) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
 }
+function libraryUrl(appId: number) {
+  return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`
+}
 
 function formatUnlockDate(ts: number): string {
   if (!ts) return '?'
@@ -164,7 +167,12 @@ function formatUnlockDate(ts: number): string {
       <!-- Progress card -->
       <div v-if="selectedGame && !loadingAch" class="pcard ach-game" style="margin-bottom:16px">
         <div class="acov" style="overflow:hidden">
-          <img :src="gameHeaderUrl(selectedGame.appid)" :alt="selectedGame.name" style="width:100%;height:100%;object-fit:cover" />
+          <img
+            :src="libraryUrl(selectedGame.appid)"
+            :alt="selectedGame.name"
+            style="width:100%;height:100%;object-fit:cover"
+            @error="($event.target as HTMLImageElement).src = gameHeaderUrl(selectedGame!.appid)"
+          />
         </div>
         <div>
           <div class="agname">{{ selectedGame.name }}</div>
@@ -173,7 +181,7 @@ function formatUnlockDate(ts: number): string {
             <div class="pbar" :class="pbarVariant"><i :style="{ width: `${completion}%` }" /></div>
           </div>
         </div>
-        <div class="pct">{{ completion }}%<small>COMPLETION</small></div>
+        <div class="pct">{{ completion }}%<small>{{ t('ach.completion').toUpperCase() }}</small></div>
       </div>
 
       <p v-if="loadingAch" style="color:var(--text-mute);padding:20px;text-align:center;font-family:var(--pixel);font-size:10px;">

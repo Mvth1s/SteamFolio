@@ -41,7 +41,7 @@ onMounted(async () => {
         let best: RarestAch | null = null
         for (const ach of achs) {
           if (ach.achieved !== 1) continue
-          const pct = rarities[ach.apiname] ?? 100
+          const pct = Number(rarities[ach.apiname] ?? 100)
           if (!best || pct < best.pct) best = { name: ach.name ?? ach.apiname, game: name, pct }
         }
         return best
@@ -129,8 +129,14 @@ const genreData = computed(() => {
 const genreTotal = computed(() => genreData.value.reduce((s, g) => s + g.hours, 0))
 
 const donutSegments = computed(() => {
-  let angle = 0
+  if (genreData.value.length === 0) return []
   const r = 72, cx = 90, cy = 90
+  // Single segment fills 360° — SVG arc is degenerate when start==end, use two semicircles
+  if (genreData.value.length === 1) {
+    const g = genreData.value[0]!
+    return [{ ...g, d: `M ${cx - r} ${cy} A ${r} ${r} 0 1 0 ${cx + r} ${cy} A ${r} ${r} 0 1 0 ${cx - r} ${cy} Z` }]
+  }
+  let angle = 0
   return genreData.value.map(g => {
     const pct = g.hours / genreTotal.value
     const startAngle = angle

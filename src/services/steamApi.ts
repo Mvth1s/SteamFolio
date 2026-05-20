@@ -134,6 +134,25 @@ export async function getAchievementRarities(appId: number): Promise<Record<stri
   return Object.fromEntries((data.achievementpercentages?.achievements ?? []).map(a => [a.name, a.percent]))
 }
 
+export async function getItemIconHashes(appId: number): Promise<Record<string, string>> {
+  const queryParams = new URLSearchParams({
+    appid: String(appId),
+    steamEndpoint: 'IInventoryService/GetItemDefs/v1/',
+    count: '2000',
+    start_defid: '0',
+  })
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
+  if (!response.ok) return {}
+  const data = (await response.json()) as {
+    response?: { itemdef?: { itemdefid: string; icon_url: string }[] }
+  }
+  return Object.fromEntries(
+    (data.response?.itemdef ?? [])
+      .filter(item => item.icon_url)
+      .map(item => [item.itemdefid, item.icon_url]),
+  )
+}
+
 export async function getPlayerAchievements(appId: number): Promise<SteamAchievement[]> {
   const id = getConfigValue(steamId, 'VITE_STEAM_ID')
   const queryParams = new URLSearchParams({
