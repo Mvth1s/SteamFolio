@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import PixelAvatar from '@/components/shared/PixelAvatar.vue'
@@ -8,6 +8,7 @@ import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
 import { getSteamLevel } from '@/services/steamApi'
+import { useFriends } from '@/composables/useFriends'
 
 defineProps<{ collapsed: boolean }>()
 defineEmits<{ toggle: [] }>()
@@ -21,9 +22,14 @@ const { t } = useI18n()
 const { hover, nav } = useSound()
 
 const steamLevel = ref<number | null>(null)
+const { friends, load: loadFriends } = useFriends()
+const onlineFriendsCount = computed(() =>
+  friends.value.filter(f => f.personastate !== 0).length
+)
 
 onMounted(async () => {
   try { steamLevel.value = await getSteamLevel() } catch { /* non-critical */ }
+  void loadFriends()
 })
 
 const NAV_ITEMS = [
@@ -77,6 +83,7 @@ function navigate(to: string) {
           />
         </span>
         <span>{{ t(item.labelKey) }}</span>
+        <span v-if="item.name === 'friends' && onlineFriendsCount > 0" class="nav-badge">{{ onlineFriendsCount }}</span>
       </button>
 
       <div class="nav-section-label" style="margin-top:14px">{{ t('nav.quick') }}</div>
