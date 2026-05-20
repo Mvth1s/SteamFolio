@@ -43,24 +43,10 @@ function gameHeaderUrl(appId: number) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
 }
 
-function badgeIconUrl(badge: SteamBadge): string {
-  if (badge.appid) {
-    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/capsule_184x69.jpg`
-  }
-  return `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}_card.png`
-}
-
-function onBadgeImgError(e: Event) {
-  const img = e.target as HTMLImageElement
-  img.style.display = 'none'
-  const parent = img.parentElement
-  if (parent && !parent.querySelector('.badge-fallback')) {
-    const fb = document.createElement('div')
-    fb.className = 'badge-fallback'
-    fb.style.cssText = 'width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.5'
-    fb.textContent = '🏅'
-    parent.prepend(fb)
-  }
+function badgeGameName(badge: SteamBadge): string {
+  if (!badge.appid) return ''
+  const name = allGames.value.find(g => g.appid === badge.appid)?.name ?? ''
+  return name.length > 14 ? name.slice(0, 13) + '…' : name
 }
 
 const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
@@ -132,6 +118,18 @@ onMounted(async () => {
             <div class="qs"><div class="v">{{ friendsCount ?? '…' }}</div><div class="l">FRIENDS</div></div>
             <div class="qs"><div class="v" style="color:var(--xp)">{{ steamLevel ?? '…' }}</div><div class="l">{{ t('common.lvl') }}</div></div>
           </div>
+          <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+            <a
+              :href="player.profileurl"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="font-family:var(--pixel);font-size:8px;color:var(--accent);padding:8px 14px;border:1px solid var(--accent-dim);letter-spacing:1px;text-decoration:none"
+            >STEAM PROFILE ↗</a>
+            <a
+              :href="`steam://friends/add/${player.steamid}`"
+              style="font-family:var(--pixel);font-size:8px;color:var(--good);padding:8px 14px;border:1px solid var(--good);letter-spacing:1px;text-decoration:none"
+            >+ ADD FRIEND</a>
+          </div>
         </div>
       </div>
 
@@ -145,10 +143,13 @@ onMounted(async () => {
             <span class="label">{{ t('profile.showcase') }}</span>
           </div>
           <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
-            <div
+            <a
               v-for="(game, i) in showcaseGames"
               :key="game.appid"
-              style="display:grid;grid-template-columns:24px 56px 1fr auto;gap:12px;align-items:center;"
+              :href="`https://store.steampowered.com/app/${game.appid}/`"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="display:grid;grid-template-columns:24px 56px 1fr auto;gap:12px;align-items:center;text-decoration:none;color:inherit"
             >
               <span style="font-family:var(--pixel);font-size:10px;color:var(--text-mute)">#{{ i + 1 }}</span>
               <div style="width:56px;height:28px;overflow:hidden;">
@@ -156,7 +157,7 @@ onMounted(async () => {
               </div>
               <span style="font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ game.name }}</span>
               <span style="font-family:var(--mono);font-size:12px;color:var(--accent)">{{ Math.floor(game.playtime_forever / 60) }}h</span>
-            </div>
+            </a>
             <div v-if="showcaseGames.length === 0" style="color:var(--text-mute);text-align:center;padding:16px;">Loading…</div>
           </div>
         </div>
@@ -169,30 +170,46 @@ onMounted(async () => {
             <span class="sub">{{ badges.length ? `${badges.length} earned` : '…' }}</span>
           </div>
           <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-            <div
+            <a
               v-for="(badge, i) in badges"
               :key="badge.badgeid"
+              :href="badge.appid ? `https://store.steampowered.com/app/${badge.appid}/` : `${player?.profileurl}badges/`"
+              target="_blank"
+              rel="noopener noreferrer"
               :style="{
                 aspectRatio: '1',
                 background: `linear-gradient(135deg,${badgeColor(i)}22,transparent)`,
                 border: `1px solid ${badgeColor(i)}55`,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                padding: '6px', gap: '4px', overflow: 'hidden',
+                padding: '4px', gap: '4px', overflow: 'hidden',
+                textDecoration: 'none',
               }"
             >
-              <img
-                :src="badgeIconUrl(badge)"
-                loading="lazy"
-                :style="badge.appid ? 'width:56px;height:auto;object-fit:cover;border-radius:1px' : 'width:36px;height:36px;object-fit:contain;image-rendering:pixelated'"
-                :alt="`Badge ${badge.badgeid}`"
-                @error="onBadgeImgError"
-              />
-              <div style="font-family:var(--pixel);font-size:6px;letter-spacing:0.5px;text-align:center;line-height:1.4" :style="{ color: badgeColor(i) }">
-                LVL {{ badge.level }}
-                <span style="color:var(--text-mute);display:block">{{ badge.xp }} XP</span>
-              </div>
-            </div>
+              <!-- Game badge: show game header art -->
+              <template v-if="badge.appid">
+                <div style="width:100%;overflow:hidden;flex-shrink:0">
+                  <img
+                    :src="`https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`"
+                    loading="lazy"
+                    style="width:100%;height:auto;object-fit:cover;display:block"
+                    :alt="badgeGameName(badge)"
+                  />
+                </div>
+                <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 2px" :style="{ color: badgeColor(i) }">
+                  {{ badgeGameName(badge) || `#${badge.appid}` }}
+                  <span style="color:var(--text-mute);display:block">LVL {{ badge.level }} · {{ badge.xp }}XP</span>
+                </div>
+              </template>
+              <!-- Community badge: styled icon -->
+              <template v-else>
+                <PixelIcon kind="star" :size="28" :color="badgeColor(i)" />
+                <div style="font-family:var(--pixel);font-size:6px;letter-spacing:0.5px;text-align:center;line-height:1.6" :style="{ color: badgeColor(i) }">
+                  LVL {{ badge.level }}
+                  <span style="color:var(--text-mute);display:block">{{ badge.xp }} XP</span>
+                </div>
+              </template>
+            </a>
             <div
               v-if="badges.length === 0"
               style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-mute);font-family:var(--pixel);font-size:9px"

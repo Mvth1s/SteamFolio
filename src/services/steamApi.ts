@@ -1,4 +1,4 @@
-import type { SteamAchievement, SteamBadge, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamWishlistItem } from '@/types/steam'
+import type { SteamAchievement, SteamBadge, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamScreenshot, SteamWishlistItem } from '@/types/steam'
 
 const steamId = import.meta.env.VITE_STEAM_ID
 
@@ -101,6 +101,27 @@ export async function getWishlist(): Promise<SteamWishlistItem[]> {
 export async function getBadges(): Promise<SteamBadge[]> {
   const data = await fetchSteamApi<{ response: { badges?: SteamBadge[] } }>('IPlayerService/GetBadges/v1/')
   return data.response.badges ?? []
+}
+
+// Calls the Steam Store API directly (CORS-enabled, no key required)
+export async function getStoreGenres(appId: number): Promise<string[]> {
+  try {
+    const params = new URLSearchParams({ appids: String(appId), filters: 'genres', l: 'english' })
+    const res = await fetch(`https://store.steampowered.com/api/appdetails?${params}`)
+    if (!res.ok) return []
+    const data = (await res.json()) as Record<string, { success: boolean; data?: { genres?: { id: string; description: string }[] } }>
+    return data[String(appId)]?.data?.genres?.map(g => g.description) ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function getScreenshots(): Promise<SteamScreenshot[]> {
+  const data = await fetchSteamApi<{ response?: { publishedfiledetails?: SteamScreenshot[] } }>(
+    'IPublishedFileService/GetUserFiles/v1/',
+    { type: '2', appid: '0', numperpage: '50', return_metadata: '1' },
+  )
+  return data.response?.publishedfiledetails ?? []
 }
 
 export async function getAchievementRarities(appId: number): Promise<Record<string, number>> {
