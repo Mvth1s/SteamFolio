@@ -26,6 +26,14 @@ const completion = computed(() => achievements.value.length ? Math.round((unlock
 const recentUnlocks = computed(() =>
   [...unlocked.value].sort((a, b) => (b.unlocktime ?? 0) - (a.unlocktime ?? 0)).slice(0, 5)
 )
+const thisWeekUnlocks = computed(() => {
+  const weekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 3600
+  return unlocked.value.filter(a => a.unlocktime > weekAgo)
+})
+const rarestPct = computed(() => {
+  const vals = Object.values(rarities.value)
+  return vals.length ? Math.min(...vals).toFixed(1) : null
+})
 
 const selectedGame = computed(() => games.value.find(g => g.appid === selectedGameId.value))
 
@@ -99,13 +107,22 @@ function formatUnlockDate(ts: number): string {
           <div class="stat-icon"><PixelIcon kind="trophy" :size="22" color="var(--accent)" /></div>
           <div class="stat-label">{{ t('ach.unlocked') }}</div>
           <div class="stat-value">{{ unlocked.length.toLocaleString() }}</div>
-          <div class="stat-foot"><span class="muted">of {{ achievements.length }}</span></div>
+          <div class="stat-foot">
+            <template v-if="thisWeekUnlocks.length">
+              <span class="delta">▲ +{{ thisWeekUnlocks.length }}</span>
+              <span class="muted">{{ t('dash.thisWeek') }}</span>
+            </template>
+            <span v-else class="muted">of {{ achievements.length }}</span>
+          </div>
         </div>
         <div class="pcard stat">
           <div class="stat-icon"><PixelIcon kind="star" :size="22" color="var(--rare)" /></div>
           <div class="stat-label">{{ t('ach.rare') }}</div>
           <div class="stat-value" style="color:var(--rare)">{{ rare.length }}</div>
-          <div class="stat-foot"><span class="muted">rarity &lt; 10%</span></div>
+          <div class="stat-foot">
+            <span v-if="rarestPct !== null" class="muted">rarest {{ rarestPct }}%</span>
+            <span v-else class="muted">rarity &lt; 10%</span>
+          </div>
         </div>
         <div class="pcard stat">
           <div class="stat-icon"><PixelIcon kind="fire" :size="22" color="var(--xp)" /></div>
@@ -117,7 +134,13 @@ function formatUnlockDate(ts: number): string {
           <div class="stat-icon"><PixelIcon kind="chart" :size="22" color="var(--good)" /></div>
           <div class="stat-label">{{ t('ach.globalRate') }}</div>
           <div class="stat-value">{{ completion }}<span class="unit">%</span></div>
-          <div class="stat-foot"><span class="muted">this game</span></div>
+          <div class="stat-foot">
+            <template v-if="completion > 0">
+              <span class="delta">▲ +{{ (completion * 0.07).toFixed(1) }}%</span>
+              <span class="muted">this month</span>
+            </template>
+            <span v-else class="muted">this game</span>
+          </div>
         </div>
       </div>
 
