@@ -53,7 +53,11 @@ const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)'
 function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
 
 function badgeImageUrl(badge: SteamBadge): string {
-  if (badge.appid) return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/badge_${badge.level}.png`
+  if (badge.appid) {
+    if (badge.communityitemid)
+      return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/${badge.communityitemid}.png`
+    return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/badge_${badge.level}.png`
+  }
   return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}.png`
 }
 
@@ -87,7 +91,7 @@ onMounted(async () => {
 <template>
   <div>
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading profile…
+      {{ t('common.loading') }}
     </p>
     <p v-else-if="error" style="color:var(--bad);padding:40px;text-align:center;">{{ error }}</p>
 
@@ -128,9 +132,9 @@ onMounted(async () => {
           </div>
 
           <div class="quick-stats">
-            <div class="qs"><div class="v">{{ allGames.length || '…' }}</div><div class="l">GAMES</div></div>
-            <div class="qs"><div class="v">{{ totalHours > 0 ? totalHours.toLocaleString() : '…' }}</div><div class="l">HOURS</div></div>
-            <div class="qs"><div class="v">{{ friendsCount ?? '…' }}</div><div class="l">FRIENDS</div></div>
+            <div class="qs"><div class="v">{{ allGames.length || '…' }}</div><div class="l">{{ t('lib.totalGames').toUpperCase() }}</div></div>
+            <div class="qs"><div class="v">{{ totalHours > 0 ? totalHours.toLocaleString() : '…' }}</div><div class="l">{{ t('common.hours').toUpperCase() }}</div></div>
+            <div class="qs"><div class="v">{{ friendsCount ?? '…' }}</div><div class="l">{{ t('nav.friends').toUpperCase() }}</div></div>
             <div class="qs"><div class="v" style="color:var(--xp)">{{ steamLevel ?? '…' }}</div><div class="l">{{ t('common.lvl') }}</div></div>
           </div>
           <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
@@ -139,11 +143,11 @@ onMounted(async () => {
               target="_blank"
               rel="noopener noreferrer"
               style="font-family:var(--pixel);font-size:8px;color:var(--accent);padding:8px 14px;border:1px solid var(--accent-dim);letter-spacing:1px;text-decoration:none"
-            >STEAM PROFILE ↗</a>
+            >{{ t('profile.steamProfile') }}</a>
             <a
               :href="`steam://friends/add/${player.steamid}`"
               style="font-family:var(--pixel);font-size:8px;color:var(--good);padding:8px 14px;border:1px solid var(--good);letter-spacing:1px;text-decoration:none"
-            >+ ADD FRIEND</a>
+            >{{ t('profile.addFriend') }}</a>
           </div>
         </div>
       </div>
@@ -173,7 +177,7 @@ onMounted(async () => {
               <span style="font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ game.name }}</span>
               <span style="font-family:var(--mono);font-size:12px;color:var(--accent)">{{ Math.floor(game.playtime_forever / 60) }}h</span>
             </a>
-            <div v-if="showcaseGames.length === 0" style="color:var(--text-mute);text-align:center;padding:16px;">Loading…</div>
+            <div v-if="showcaseGames.length === 0" style="color:var(--text-mute);text-align:center;padding:16px;">{{ t('common.loading') }}</div>
           </div>
         </div>
 
@@ -182,7 +186,7 @@ onMounted(async () => {
           <div class="pcard-h">
             <PixelIcon kind="star" :size="14" color="var(--rare)" />
             <span class="label">{{ t('profile.badges') }}</span>
-            <span class="sub">{{ badges.length ? `${badges.length} earned` : '…' }}</span>
+            <span class="sub">{{ badges.length ? `${badges.length} ${t('profile.earned')}` : '…' }}</span>
           </div>
           <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
             <a
@@ -209,13 +213,13 @@ onMounted(async () => {
               />
               <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.5;padding:0 2px" :style="{ color: badgeColor(i) }">
                 {{ badgeGameName(badge) || `#${badge.badgeid}` }}
-                <span style="color:var(--text-mute);display:block;margin-top:2px">LVL {{ badge.level }} · {{ badge.xp }}XP</span>
+                <span style="color:var(--text-mute);display:block;margin-top:2px">{{ t('common.lvl') }} {{ badge.level }} · {{ badge.xp }}XP</span>
               </div>
             </a>
             <div
               v-if="badges.length === 0"
               style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-mute);font-family:var(--pixel);font-size:9px"
-            >Loading…</div>
+            >{{ t('common.loading') }}</div>
           </div>
         </div>
 

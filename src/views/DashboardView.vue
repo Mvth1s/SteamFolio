@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import InfoTip from '@/components/shared/InfoTip.vue'
-import { getOwnedGames, getFriends, getRecentlyPlayedGames, getStoreGenres, getBadges } from '@/services/steamApi'
+import { getOwnedGames, getFriends, getRecentlyPlayedGames, getStoreGenres, getBadges, getPlayerAchievements, getAchievementRarities } from '@/services/steamApi'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
@@ -19,6 +19,9 @@ const friendsCount = ref<number | null>(null)
 const loading = ref(true)
 const realGenreMap = ref<Map<string, { hours: number; topGame: string }> | null>(null)
 
+interface RarestAch { name: string; game: string; pct: number }
+const rarestAch = ref<RarestAch | null>(null)
+
 onMounted(async () => {
   const [g, f, r, b] = await Promise.allSettled([
     getOwnedGames(), getFriends(), getRecentlyPlayedGames(), getBadges(),
@@ -28,6 +31,30 @@ onMounted(async () => {
   if (r.status === 'fulfilled') recent.value = r.value
   if (b.status === 'fulfilled') badges.value = b.value
   loading.value = false
+
+  // Background: find rarest unlocked achievement across up to 3 recent games
+  if (r.status === 'fulfilled' && r.value.length) {
+    const gameIds = r.value.slice(0, 3).map(g => ({ appid: g.appid, name: g.name }))
+    Promise.all(
+      gameIds.map(async ({ appid, name }) => {
+        const [achs, rarities] = await Promise.all([getPlayerAchievements(appid), getAchievementRarities(appid)])
+        let best: RarestAch | null = null
+        for (const ach of achs) {
+          if (ach.achieved !== 1) continue
+          const pct = rarities[ach.apiname] ?? 100
+          if (!best || pct < best.pct) best = { name: ach.name ?? ach.apiname, game: name, pct }
+        }
+        return best
+      })
+    ).then(results => {
+      const winner = results.reduce<RarestAch | null>((best, cur) => {
+        if (!cur) return best
+        if (!best || cur.pct < best.pct) return cur
+        return best
+      }, null)
+      if (winner) rarestAch.value = winner
+    }).catch(() => {})
+  }
 
   // Background: fetch genres for top 15 played games via server-side proxy
   if (g.status === 'fulfilled' && g.value.length > 0) {
@@ -171,7 +198,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
         <div class="stat-value">
           <span v-if="loading">—</span>
-          <template v-else>{{ totalHours.toLocaleString() }}<span class="unit">hrs</span></template>
+          <template v-else>{{ totalHours.toLocaleString() }}<span class="unit">{{ t('common.hrs') }}</span></template>
         </div>
         <div class="stat-foot"><span class="muted">{{ t('dash.acrossAll') }}</span></div>
       </div>
@@ -183,7 +210,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
         <div class="stat-value">
           <span v-if="loading">—</span>
-          <template v-else>{{ weeklyAvgHrs }}<span class="unit">hrs/wk</span></template>
+          <template v-else>{{ weeklyAvgHrs }}<span class="unit">{{ t('common.hrsWk') }}</span></template>
         </div>
         <div class="stat-foot"><span class="muted">{{ t('dash.thisWeek') }}</span></div>
       </div>
@@ -344,7 +371,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
             {{ t('dash.dlcRatio') }}
             <InfoTip :content="t('tip.dlcRatio')" />
           </span>
-          <span class="sub">{{ dlcTotal ? (dlcEstimate / games.length).toFixed(2) : '—' }} dlc/game</span>
+          <span class="sub">{{ dlcTotal ? (dlcEstimate / games.length).toFixed(2) : '—' }} {{ t('dash.dlcPerGame') }}</span>
         </div>
         <div style="display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;padding:16px 20px">
           <div style="width:120px;height:120px;position:relative">
@@ -354,13 +381,13 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
             }" />
             <div style="position:absolute;inset:22px;background:var(--bg-navy);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center">
               <div style="font-family:var(--pixel);font-size:9px;color:var(--accent)">{{ dlcTotal }}</div>
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text-mute);margin-top:4px">items</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-mute);margin-top:4px">{{ t('common.items') }}</div>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:10px">
             <div class="dlc-row">
               <span class="dlc-sw" style="background:var(--accent)" />
-              <span>Games</span>
+              <span>{{ t('dash.games') }}</span>
               <span class="dlc-v">{{ games.length }}</span>
               <span class="dlc-p">{{ dlcTotal ? Math.round((games.length / dlcTotal) * 100) : 0 }}%</span>
             </div>
@@ -414,7 +441,14 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
                 {{ t('dash.rarest') }}
               </span>
             </div>
-            <div class="rtitle" style="margin-top:8px">— · {{ t('nav.achievements') }}</div>
+            <template v-if="rarestAch">
+              <div class="rtitle" style="margin-top:8px">{{ rarestAch.name }}</div>
+              <div class="rmeta" style="margin-top:6px">
+                <span class="rgame">{{ rarestAch.game }}</span>
+                · {{ rarestAch.pct.toFixed(1) }}%
+              </div>
+            </template>
+            <div v-else class="rtitle" style="margin-top:8px;color:var(--text-mute);font-size:9px">{{ t('common.loading') }}</div>
           </div>
         </div>
       </div>
@@ -430,7 +464,15 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         <span class="sub">{{ t('dash.last2weeks') }}</span>
       </div>
       <div class="feed">
-        <div v-for="game in recent" :key="game.appid" class="feed-row">
+        <a
+          v-for="game in recent"
+          :key="game.appid"
+          class="feed-row"
+          :href="`https://store.steampowered.com/app/${game.appid}/`"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="text-decoration:none;color:inherit"
+        >
           <div class="ico" style="overflow:hidden">
             <img
               :src="libraryUrl(game.appid)"
@@ -444,7 +486,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
             <div class="fmeta">{{ formatHours(game.playtime_forever) }} {{ t('common.total') }}</div>
           </div>
           <div class="dur">{{ formatRecent(game.playtime_2weeks) }}<small>{{ t('dash.session') }}</small></div>
-        </div>
+        </a>
       </div>
     </div>
 

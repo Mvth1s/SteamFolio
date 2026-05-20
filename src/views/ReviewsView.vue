@@ -47,17 +47,17 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading…
+      {{ t('common.loading') }}
     </p>
     <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
 
     <template v-else>
       <div class="pcard" style="padding:12px 16px;margin-bottom:16px;font-size:11px;color:var(--text-mute);border-left:2px solid var(--accent-dim)">
-        Games you've played, sorted by playtime. Hit REVIEW ↗ to write or update a review on Steam.
+        {{ t('reviews.hint') }}
       </div>
 
       <div v-if="reviewableGames.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
-        No reviewable games yet.
+        {{ t('reviews.empty') }}
       </div>
 
       <div v-else class="grid cards">
@@ -83,7 +83,7 @@ onMounted(async () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style="font-family:var(--pixel);font-size:7px;color:var(--accent);letter-spacing:1px;padding:2px 5px;border:1px solid var(--accent-dim)"
-              >REVIEW ↗</a>
+              >{{ t('reviews.review') }}</a>
             </div>
           </div>
         </div>

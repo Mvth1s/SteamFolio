@@ -44,6 +44,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'common.total': 'total',
     'common.loading': 'Loading…',
     'common.neverPlayed': 'never played',
+    'common.hours': 'Hours',
+    'common.hrs': 'hrs',
+    'common.hrsWk': 'hrs/wk',
+    'common.items': 'items',
 
     // dashboard
     'dash.overview': 'OVERVIEW',
@@ -85,6 +89,8 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'dash.totalXp': 'total badge XP',
     'dash.gameBadges': 'game badges',
     'dash.badgesEarned': 'badges earned',
+    'dash.dlcPerGame': 'dlc/game',
+    'dash.games': 'Games',
 
     // tooltips
     'tip.gamesOwned': 'All games on your Steam account, including free titles and gifts.',
@@ -107,6 +113,9 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'profile.genres': 'Genres played',
     'profile.reviews': 'Reviews written',
     'profile.workshop': 'Workshop items',
+    'profile.steamProfile': 'STEAM PROFILE ↗',
+    'profile.addFriend': '+ ADD FRIEND',
+    'profile.earned': 'earned',
 
     // library
     'lib.byPlay': 'BY PLAYTIME',
@@ -131,6 +140,12 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'ach.loadingAch': 'Loading achievements…',
     'ach.noAch': 'This game has no achievements.',
     'ach.locked': 'locked',
+    'ach.completion': '% completion',
+    'ach.of': 'of',
+    'ach.rarestLabel': 'rarest',
+    'ach.rarityThreshold': 'rarity < 10%',
+    'ach.perfectDesc': '100% completion',
+    'ach.thisGame': 'this game',
 
     // friends
     'friends.all': 'ALL',
@@ -141,6 +156,16 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'friends.total': 'total',
     'friends.loading': 'Loading friends…',
     'friends.noFilter': 'No friends in this filter.',
+
+    // wishlist
+    'wishlist.loading': 'Loading wishlist…',
+    'wishlist.empty': 'Your wishlist is empty.',
+    'wishlist.store': 'STORE ↗',
+
+    // reviews
+    'reviews.hint': 'Games you\'ve played, sorted by playtime. Click REVIEW to write or update a review on Steam.',
+    'reviews.empty': 'No reviewable games yet.',
+    'reviews.review': 'REVIEW ↗',
 
     // screenshots
     'screenshots.loading': 'Loading screenshots…',
@@ -215,6 +240,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'common.total': 'au total',
     'common.loading': 'Chargement…',
     'common.neverPlayed': 'jamais joué',
+    'common.hours': 'Heures',
+    'common.hrs': 'h',
+    'common.hrsWk': 'h/sem',
+    'common.items': 'éléments',
 
     'dash.overview': "VUE D'ENSEMBLE",
     'dash.gamesOwned': 'JEUX POSSÉDÉS',
@@ -255,6 +284,8 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'dash.totalXp': 'XP total (badges)',
     'dash.gameBadges': 'badges de jeux',
     'dash.badgesEarned': 'badges gagnés',
+    'dash.dlcPerGame': 'dlc/jeu',
+    'dash.games': 'Jeux',
 
     'tip.gamesOwned': 'Tous les jeux de votre compte Steam, y compris gratuits et cadeaux.',
     'tip.dlcOwned': 'Extensions et contenus additionnels possédés dans votre bibliothèque.',
@@ -275,6 +306,9 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'profile.genres': 'Genres joués',
     'profile.reviews': 'Évaluations écrites',
     'profile.workshop': 'Objets workshop',
+    'profile.steamProfile': 'PROFIL STEAM ↗',
+    'profile.addFriend': '+ AJOUTER UN AMI',
+    'profile.earned': 'obtenus',
 
     'lib.byPlay': 'PAR TEMPS DE JEU',
     'lib.recent': 'RÉCENTS',
@@ -297,6 +331,12 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'ach.loadingAch': 'Chargement des succès…',
     'ach.noAch': "Ce jeu n'a pas de succès.",
     'ach.locked': 'verrouillé',
+    'ach.completion': '% complétion',
+    'ach.of': 'sur',
+    'ach.rarestLabel': 'plus rare',
+    'ach.rarityThreshold': 'rareté < 10%',
+    'ach.perfectDesc': 'complétion 100%',
+    'ach.thisGame': 'ce jeu',
 
     'friends.all': 'TOUS',
     'friends.online': 'EN LIGNE',
@@ -306,6 +346,16 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'friends.total': 'au total',
     'friends.loading': 'Chargement des amis…',
     'friends.noFilter': 'Aucun ami dans ce filtre.',
+
+    // liste de souhaits
+    'wishlist.loading': 'Chargement de la liste de souhaits…',
+    'wishlist.empty': 'Votre liste de souhaits est vide.',
+    'wishlist.store': 'BOUTIQUE ↗',
+
+    // évaluations
+    'reviews.hint': 'Jeux déjà joués, triés par temps de jeu. Cliquez sur ÉVALUER pour rédiger ou mettre à jour une évaluation sur Steam.',
+    'reviews.empty': 'Aucun jeu évaluable pour l\'instant.',
+    'reviews.review': 'ÉVALUER ↗',
 
     'screenshots.loading': 'Chargement des captures…',
     'screenshots.none': 'Aucune capture d\'écran publique trouvée.',

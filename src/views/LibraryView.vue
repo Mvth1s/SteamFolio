@@ -40,7 +40,7 @@ function formatHours(minutes: number): string {
 }
 
 // Genre lazy-loading: fetch genres progressively for visible cards (throttled)
-const genreCache = reactive(new Map<number, string>())
+const genreCache = reactive(new Map<number, string[]>())
 let genreLoadTimer: ReturnType<typeof setTimeout> | null = null
 
 async function loadGenresFor(appids: number[]) {
@@ -49,9 +49,8 @@ async function loadGenresFor(appids: number[]) {
     await new Promise(r => setTimeout(r, 200))
     try {
       const genres = await getStoreGenres(appid)
-      if (genres.length > 0) genreCache.set(appid, genres[0]!)
-      else genreCache.set(appid, '')
-    } catch { genreCache.set(appid, '') }
+      genreCache.set(appid, genres)
+    } catch { genreCache.set(appid, []) }
   }
 }
 
@@ -151,8 +150,12 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
               <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">{{ t('lib.neverPlayed') }}</span>
               <span v-else-if="game.rtime_last_played" style="color:var(--text-mute)">{{ formatLastPlayed(game.rtime_last_played) }}</span>
             </div>
-            <div v-if="genreCache.get(game.appid)" class="gmeta" style="margin-top:4px">
-              <span style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)">{{ genreCache.get(game.appid) }}</span>
+            <div v-if="genreCache.get(game.appid)?.length" class="gmeta" style="margin-top:4px;flex-wrap:wrap;gap:4px">
+              <span
+                v-for="genre in genreCache.get(game.appid)"
+                :key="genre"
+                style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)"
+              >{{ genre }}</span>
             </div>
           </div>
         </a>

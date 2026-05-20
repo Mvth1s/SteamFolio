@@ -91,7 +91,7 @@ function formatUnlockDate(ts: number): string {
     <div class="section-h">
       <h2>{{ t('nav.achievements').toUpperCase() }}</h2>
       <span v-if="!loadingGames && achievements.length" class="meta">
-        {{ unlocked.length }} / {{ achievements.length }} · {{ completion }}% completion
+        {{ unlocked.length }} / {{ achievements.length }} · {{ completion }}{{ t('ach.completion') }}
       </span>
     </div>
 
@@ -111,7 +111,7 @@ function formatUnlockDate(ts: number): string {
               <span class="delta">▲ +{{ thisWeekUnlocks.length }}</span>
               <span class="muted">{{ t('dash.thisWeek') }}</span>
             </template>
-            <span v-else class="muted">of {{ achievements.length }}</span>
+            <span v-else class="muted">{{ t('ach.of') }} {{ achievements.length }}</span>
           </div>
         </div>
         <div class="pcard stat">
@@ -119,15 +119,15 @@ function formatUnlockDate(ts: number): string {
           <div class="stat-label">{{ t('ach.rare') }}</div>
           <div class="stat-value" style="color:var(--rare)">{{ rare.length }}</div>
           <div class="stat-foot">
-            <span v-if="rarestPct !== null" class="muted">rarest {{ rarestPct }}%</span>
-            <span v-else class="muted">rarity &lt; 10%</span>
+            <span v-if="rarestPct !== null" class="muted">{{ t('ach.rarestLabel') }} {{ rarestPct }}%</span>
+            <span v-else class="muted">{{ t('ach.rarityThreshold') }}</span>
           </div>
         </div>
         <div class="pcard stat">
           <div class="stat-icon"><PixelIcon kind="fire" :size="22" color="var(--xp)" /></div>
           <div class="stat-label">{{ t('ach.perfect') }}</div>
           <div class="stat-value" style="color:var(--xp)">{{ perfect }}</div>
-          <div class="stat-foot"><span class="muted">100% completion</span></div>
+          <div class="stat-foot"><span class="muted">{{ t('ach.perfectDesc') }}</span></div>
         </div>
         <div class="pcard stat">
           <div class="stat-icon"><PixelIcon kind="chart" :size="22" color="var(--good)" /></div>
@@ -136,9 +136,9 @@ function formatUnlockDate(ts: number): string {
           <div class="stat-foot">
             <template v-if="completion > 0">
               <span class="delta">▲ +{{ (completion * 0.07).toFixed(1) }}%</span>
-              <span class="muted">this month</span>
+              <span class="muted">{{ t('dash.thisMonth').toLowerCase() }}</span>
             </template>
-            <span v-else class="muted">this game</span>
+            <span v-else class="muted">{{ t('ach.thisGame') }}</span>
           </div>
         </div>
       </div>

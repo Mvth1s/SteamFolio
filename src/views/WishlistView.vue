@@ -40,13 +40,13 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading wishlist…
+      {{ t('wishlist.loading') }}
     </p>
     <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
 
     <template v-else>
       <div v-if="items.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
-        Your wishlist is empty.
+        {{ t('wishlist.empty') }}
       </div>
 
       <div v-else class="grid cards">
@@ -76,7 +76,7 @@ onMounted(async () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style="font-family:var(--pixel);font-size:7px;color:var(--accent);letter-spacing:1px;padding:2px 5px;border:1px solid var(--accent-dim)"
-              >STORE ↗</a>
+              >{{ t('wishlist.store') }}</a>
             </div>
           </div>
         </div>

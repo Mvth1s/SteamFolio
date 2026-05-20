@@ -1250,8 +1250,19 @@ a { color: var(--accent); text-decoration: none; }
   .topbar .search { display: none; }
   .page { padding: 16px 16px 32px; }
   .grid.stats { grid-template-columns: 1fr 1fr; }
+  .grid.cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .grid.friends { grid-template-columns: 1fr; }
   .top3-grid { grid-template-columns: 1fr; }
+  .donut-wrap { grid-template-columns: 1fr; justify-items: center; }
+  .donut { margin: 0 auto; }
+  .bars { height: 160px; gap: 8px; padding: 12px 12px 10px; }
+  .ach-game { grid-template-columns: 44px 1fr; }
+  .ach-game .pct { display: none; }
+  .hero h1 { font-size: 16px; }
+  .stat .stat-value { font-size: 22px; }
+  .cp-timer { font-size: 22px; }
   .err-bigcode { font-size: 44px; }
+  .toolbar { flex-wrap: wrap; gap: 8px; }
 }
 
 /* ============================================================
