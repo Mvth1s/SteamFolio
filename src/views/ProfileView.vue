@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { getSteamLevel, getOwnedGames, getFriends } from '@/services/steamApi'
+import { getSteamLevel, getOwnedGames, getFriends, getBadges } from '@/services/steamApi'
+import type { SteamBadge } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { formatUnixDate, getStatusLabel } from '@/utils/steamFormatters'
@@ -13,6 +14,7 @@ const { t } = useI18n()
 const steamLevel = ref<number | null>(null)
 const allGames = ref<SteamOwnedGame[]>([])
 const friendsCount = ref<number | null>(null)
+const badges = ref<SteamBadge[]>([])
 
 const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
 const showcaseGames = computed(() => [...allGames.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5))
@@ -30,16 +32,6 @@ const bestWeekHrs = computed(() => {
 const reviewsEst = computed(() => Math.max(1, Math.round(playedGames.value.filter(g => g.playtime_forever > 30 * 60).length * 0.06)))
 const workshopEst = computed(() => Math.max(0, Math.round(allGames.value.length * 0.03)))
 
-const BADGES = [
-  { label: 'CRPG\nMASTER', icon: 'trophy', color: 'var(--accent)' },
-  { label: '100%\nCLUB',   icon: 'star',   color: 'var(--xp)' },
-  { label: 'INDIE\nSCOUT', icon: 'trophy', color: 'var(--rare)' },
-  { label: 'PIXEL\nPROPHET',icon: 'star',  color: 'var(--good)' },
-  { label: '3K\nHOURS',   icon: 'trophy', color: 'var(--accent)' },
-  { label: 'NIGHT\nOWL',  icon: 'star',   color: 'var(--xp)' },
-  { label: 'COMPLE-\nTIONIST', icon: 'trophy', color: 'var(--rare)' },
-  { label: 'STEAM\nFAN',  icon: 'star',   color: 'var(--good)' },
-] as const
 
 function countryFlag(code: string): string {
   if (!code || code.length !== 2) return ''
@@ -51,15 +43,30 @@ function gameHeaderUrl(appId: number) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
 }
 
+function badgeIconUrl(badge: SteamBadge): string {
+  if (badge.appid) {
+    return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/icon.jpg`
+  }
+  return `https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}_card.png`
+}
+
+const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
+function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
+
 onMounted(async () => {
-  const [lvl, games, friends] = await Promise.allSettled([
+  const [lvl, games, friends, bdgs] = await Promise.allSettled([
     getSteamLevel(),
     getOwnedGames(),
     getFriends(),
+    getBadges(),
   ])
   if (lvl.status === 'fulfilled') steamLevel.value = lvl.value
   if (games.status === 'fulfilled') allGames.value = games.value
   if (friends.status === 'fulfilled') friendsCount.value = friends.value.length
+  if (bdgs.status === 'fulfilled') {
+    // Sort by XP desc, take top 8
+    badges.value = [...bdgs.value].sort((a, b) => b.xp - a.xp).slice(0, 8)
+  }
 })
 </script>
 
@@ -146,26 +153,37 @@ onMounted(async () => {
           <div class="pcard-h">
             <PixelIcon kind="star" :size="14" color="var(--rare)" />
             <span class="label">{{ t('profile.badges') }}</span>
-            <span class="sub">{{ t('profile.badgesEarned') }}</span>
+            <span class="sub">{{ badges.length ? `${badges.length} earned` : '…' }}</span>
           </div>
           <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
             <div
-              v-for="badge in BADGES"
-              :key="badge.label"
+              v-for="(badge, i) in badges"
+              :key="badge.badgeid"
               :style="{
                 aspectRatio: '1',
-                background: `linear-gradient(135deg,${badge.color}22,transparent)`,
-                border: `1px solid ${badge.color}55`,
+                background: `linear-gradient(135deg,${badgeColor(i)}22,transparent)`,
+                border: `1px solid ${badgeColor(i)}55`,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--pixel)', fontSize: '6px', letterSpacing: '0.5px',
-                color: badge.color, whiteSpace: 'pre-line', textAlign: 'center',
-                padding: '4px', lineHeight: '1.5',
+                padding: '6px', gap: '4px', overflow: 'hidden',
               }"
             >
-              <PixelIcon :kind="badge.icon" :size="20" :color="badge.color" />
-              <div style="margin-top:6px">{{ badge.label }}</div>
+              <img
+                :src="badgeIconUrl(badge)"
+                loading="lazy"
+                style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated"
+                :alt="`Badge ${badge.badgeid}`"
+                @error="($event.target as HTMLImageElement).style.display='none'"
+              />
+              <div style="font-family:var(--pixel);font-size:6px;letter-spacing:0.5px;text-align:center;line-height:1.4" :style="{ color: badgeColor(i) }">
+                LVL {{ badge.level }}
+                <span style="color:var(--text-mute);display:block">{{ badge.xp }} XP</span>
+              </div>
             </div>
+            <div
+              v-if="badges.length === 0"
+              style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-mute);font-family:var(--pixel);font-size:9px"
+            >Loading…</div>
           </div>
         </div>
 

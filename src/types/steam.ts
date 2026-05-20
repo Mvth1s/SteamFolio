@@ -37,6 +37,17 @@ export interface SteamAchievement {
 
 export type LibrarySortOption = 'name-asc' | 'name-desc' | 'playtime-asc' | 'playtime-desc' | 'recent'
 
+export interface SteamBadge {
+  badgeid: number
+  level: number
+  completion_time: number
+  xp: number
+  scarcity: number
+  appid?: number
+  communityitemid?: string
+  border_color?: number
+}
+
 export interface SteamRecentGame {
   appid: number
   name: string
