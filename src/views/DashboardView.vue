@@ -178,10 +178,13 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         <div class="stat-foot"><span class="muted">{{ t('dash.thisWeek') }}</span></div>
       </div>
       <div class="pcard stat">
-        <div class="stat-icon"><PixelIcon kind="friends" :size="22" color="var(--accent)" /></div>
-        <div class="stat-label">FRIENDS</div>
-        <div class="stat-value"><span v-if="friendsCount === null">—</span><span v-else>{{ friendsCount }}</span></div>
-        <div class="stat-foot"><span class="muted">on Steam</span></div>
+        <div class="stat-icon"><PixelIcon kind="plus" :size="22" color="var(--accent)" /></div>
+        <div class="stat-label" style="display:inline-flex;align-items:center">
+          {{ t('dash.dlcOwned') }}
+          <InfoTip :content="t('tip.dlcOwned')" />
+        </div>
+        <div class="stat-value"><span v-if="loading">—</span><span v-else>{{ dlcEstimate }}</span></div>
+        <div class="stat-foot"><span class="muted">est. add-ons</span></div>
       </div>
     </div>
 
