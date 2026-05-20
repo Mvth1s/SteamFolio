@@ -74,6 +74,12 @@ onMounted(async () => {
             </span>
           </div>
 
+          <div
+            v-if="player.personasummary"
+            class="bio"
+            style="margin-top:12px;max-width:480px;font-size:12px;color:var(--text-dim);line-height:1.6"
+          >{{ player.personasummary.replace(/<[^>]*>/g, '') }}</div>
+
           <!-- Level XP bar -->
           <div v-if="steamLevel !== null" style="margin-top:18px;max-width:460px">
             <div class="spread" style="margin-bottom:6px">
