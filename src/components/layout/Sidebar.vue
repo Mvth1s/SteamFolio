@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
-import PixelAvatar from '@/components/shared/PixelAvatar.vue'
 import BrandMark from '@/components/shared/BrandMark.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
@@ -113,7 +112,13 @@ function navigate(to: string) {
 
     <div class="sidebar-footer">
       <div class="player-card">
-        <PixelAvatar :seed="player?.steamid ?? 'default'" :size="38" />
+        <img
+            v-if="player?.avatarfull"
+            :src="player.avatarfull"
+            :alt="player?.personaname"
+            style="width:38px;height:38px;object-fit:cover;flex-shrink:0;border:1px solid var(--line-soft)"
+          />
+          <div v-else style="width:38px;height:38px;background:var(--bg-panel);flex-shrink:0" />
         <div style="min-width:0">
           <div class="pc-name">{{ player?.personaname ?? '…' }}</div>
           <div class="pc-status">

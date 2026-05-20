@@ -2,7 +2,6 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
-import PixelAvatar from '@/components/shared/PixelAvatar.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useTheme, SF_THEMES } from '@/composables/useTheme'
 import { useI18n } from '@/composables/useI18n'
@@ -105,7 +104,13 @@ function toggleLang() {
     </div>
 
     <div class="user">
-      <PixelAvatar :seed="player?.steamid ?? 'default'" :size="32" />
+      <img
+        v-if="player?.avatarfull"
+        :src="player.avatarfull"
+        :alt="player.personaname"
+        style="width:32px;height:32px;object-fit:cover;flex-shrink:0;border:1px solid var(--line-soft)"
+      />
+      <div v-else style="width:32px;height:32px;background:var(--bg-panel);flex-shrink:0" />
       <div>
         <div class="uname">{{ player?.personaname ?? '…' }}</div>
         <div class="ustat">
