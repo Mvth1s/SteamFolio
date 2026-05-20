@@ -11,6 +11,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'nav.friends': 'Friends',
     'nav.wishlist': 'Wishlist',
     'nav.reviews': 'Reviews',
+    'nav.screenshots': 'Screenshots',
     'nav.menu': 'MENU',
     'nav.quick': 'QUICK',
 
@@ -22,6 +23,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'crumb.social': 'SOCIAL',
     'crumb.wishlist': 'WISHLIST',
     'crumb.reviews': 'REVIEWS',
+    'crumb.screenshots': 'SCREENSHOTS',
 
     // common
     'common.search': 'search games, friends, achievements…',
@@ -159,6 +161,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'nav.friends': 'Amis',
     'nav.wishlist': 'Liste de souhaits',
     'nav.reviews': 'Évaluations',
+    'nav.screenshots': 'Captures d\'écran',
     'nav.menu': 'MENU',
     'nav.quick': 'RAPIDE',
 
@@ -169,6 +172,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'crumb.social': 'SOCIAL',
     'crumb.wishlist': 'LISTE DE SOUHAITS',
     'crumb.reviews': 'ÉVALUATIONS',
+    'crumb.screenshots': 'CAPTURES',
 
     'common.search': 'rechercher jeux, amis, succès…',
     'common.online': 'En ligne',
