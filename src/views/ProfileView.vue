@@ -59,8 +59,6 @@ function badgeImageUrl(badge: SteamBadge): string {
     if (iconHash)
       return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/${badge.appid}/${iconHash}.png`
   }
-  if (badge.appid)
-    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
   return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}.png`
 }
 
