@@ -20,6 +20,8 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'crumb.collection': 'COLLECTION',
     'crumb.trophies': 'TROPHIES',
     'crumb.social': 'SOCIAL',
+    'crumb.wishlist': 'WISHLIST',
+    'crumb.reviews': 'REVIEWS',
 
     // common
     'common.search': 'search games, friends, achievements…',
@@ -165,6 +167,8 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'crumb.collection': 'COLLECTION',
     'crumb.trophies': 'TROPHÉES',
     'crumb.social': 'SOCIAL',
+    'crumb.wishlist': 'LISTE DE SOUHAITS',
+    'crumb.reviews': 'ÉVALUATIONS',
 
     'common.search': 'rechercher jeux, amis, succès…',
     'common.online': 'En ligne',

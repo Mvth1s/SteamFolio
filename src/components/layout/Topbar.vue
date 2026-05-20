@@ -26,6 +26,8 @@ const CRUMB_MAP: Record<string, { labelKey: string; crumbKey: string }> = {
   library:      { labelKey: 'nav.library',      crumbKey: 'crumb.collection' },
   achievements: { labelKey: 'nav.achievements', crumbKey: 'crumb.trophies' },
   friends:      { labelKey: 'nav.friends',      crumbKey: 'crumb.social' },
+  wishlist:     { labelKey: 'nav.wishlist',     crumbKey: 'crumb.wishlist' },
+  reviews:      { labelKey: 'nav.reviews',      crumbKey: 'crumb.reviews' },
 }
 
 const pageInfo = computed(() => CRUMB_MAP[route.name as string] ?? { labelKey: 'nav.dashboard', crumbKey: 'crumb.overview' })

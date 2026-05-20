@@ -86,28 +86,26 @@ function navigate(to: string) {
       </button>
 
       <div class="nav-section-label" style="margin-top:14px">{{ t('nav.quick') }}</div>
-      <a
-        :href="player ? `https://store.steampowered.com/wishlist/profiles/${player.steamid}/` : '#'"
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
         class="nav-item"
+        :class="{ active: isActive('wishlist') }"
         :data-label="t('nav.wishlist')"
+        @click="navigate('/wishlist')"
         @mouseenter="hover()"
       >
-        <span class="nav-icon"><PixelIcon kind="star" :size="18" color="currentColor" /></span>
+        <span class="nav-icon"><PixelIcon kind="star" :size="18" :color="isActive('wishlist') ? 'var(--accent)' : 'currentColor'" /></span>
         <span>{{ t('nav.wishlist') }}</span>
-      </a>
-      <a
-        :href="player ? `${player.profileurl}recommended/` : '#'"
-        target="_blank"
-        rel="noopener noreferrer"
+      </button>
+      <button
         class="nav-item"
+        :class="{ active: isActive('reviews') }"
         :data-label="t('nav.reviews')"
+        @click="navigate('/reviews')"
         @mouseenter="hover()"
       >
-        <span class="nav-icon"><PixelIcon kind="chart" :size="18" color="currentColor" /></span>
+        <span class="nav-icon"><PixelIcon kind="chart" :size="18" :color="isActive('reviews') ? 'var(--accent)' : 'currentColor'" /></span>
         <span>{{ t('nav.reviews') }}</span>
-      </a>
+      </button>
     </nav>
 
     <div class="sidebar-footer">

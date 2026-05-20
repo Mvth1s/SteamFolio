@@ -4,6 +4,8 @@ import ProfileView from '@/views/ProfileView.vue'
 import LibraryView from '@/views/LibraryView.vue'
 import AchievementsView from '@/views/AchievementsView.vue'
 import FriendsView from '@/views/FriendsView.vue'
+import WishlistView from '@/views/WishlistView.vue'
+import ReviewsView from '@/views/ReviewsView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
 const router = createRouter({
@@ -37,6 +39,16 @@ const router = createRouter({
       path: '/friends',
       name: 'friends',
       component: FriendsView,
+    },
+    {
+      path: '/wishlist',
+      name: 'wishlist',
+      component: WishlistView,
+    },
+    {
+      path: '/reviews',
+      name: 'reviews',
+      component: ReviewsView,
     },
     {
       path: '/:pathMatch(.*)*',
