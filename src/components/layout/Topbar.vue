@@ -2,7 +2,6 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
-import PixelAvatar from '@/components/shared/PixelAvatar.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useTheme, SF_THEMES } from '@/composables/useTheme'
 import { useI18n } from '@/composables/useI18n'
@@ -16,7 +15,7 @@ const route = useRoute()
 const { player } = usePlayerSummary()
 const { themeKey, setTheme } = useTheme()
 const { t, lang, setLang } = useI18n()
-const { click, open, muted, setMuted } = useSound()
+const { click, open, muted, setMuted, setTheme: setSoundTheme } = useSound()
 
 const themeOpen = ref(false)
 const themeRef = ref<HTMLElement | null>(null)
@@ -27,6 +26,9 @@ const CRUMB_MAP: Record<string, { labelKey: string; crumbKey: string }> = {
   library:      { labelKey: 'nav.library',      crumbKey: 'crumb.collection' },
   achievements: { labelKey: 'nav.achievements', crumbKey: 'crumb.trophies' },
   friends:      { labelKey: 'nav.friends',      crumbKey: 'crumb.social' },
+  wishlist:     { labelKey: 'nav.wishlist',     crumbKey: 'crumb.wishlist' },
+  reviews:      { labelKey: 'nav.reviews',      crumbKey: 'crumb.reviews' },
+  screenshots:  { labelKey: 'nav.screenshots',  crumbKey: 'crumb.screenshots' },
 }
 
 const pageInfo = computed(() => CRUMB_MAP[route.name as string] ?? { labelKey: 'nav.dashboard', crumbKey: 'crumb.overview' })
@@ -37,11 +39,15 @@ function onDocClick(e: MouseEvent) {
   }
 }
 
-onMounted(() => document.addEventListener('mousedown', onDocClick))
+onMounted(() => {
+  document.addEventListener('mousedown', onDocClick)
+  setSoundTheme(themeKey.value)
+})
 onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 
 function pickTheme(key: ThemeKey) {
   setTheme(key)
+  setSoundTheme(key)
   themeOpen.value = false
   open()
 }
@@ -105,7 +111,13 @@ function toggleLang() {
     </div>
 
     <div class="user">
-      <PixelAvatar :seed="player?.steamid ?? 'default'" :size="32" />
+      <img
+        v-if="player?.avatarfull"
+        :src="player.avatarfull"
+        :alt="player.personaname"
+        style="width:32px;height:32px;object-fit:cover;flex-shrink:0;border:1px solid var(--line-soft)"
+      />
+      <div v-else style="width:32px;height:32px;background:var(--bg-panel);flex-shrink:0" />
       <div>
         <div class="uname">{{ player?.personaname ?? '…' }}</div>
         <div class="ustat">

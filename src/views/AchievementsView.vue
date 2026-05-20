@@ -47,24 +47,23 @@ async function loadAchievements(appId: number) {
   loadingAch.value = true
   error.value = ''
   rarities.value = {}
+  achievements.value = []
   try {
-    const [achs, rars] = await Promise.allSettled([
-      getPlayerAchievements(appId),
-      getAchievementRarities(appId),
-    ])
-    achievements.value = achs.status === 'fulfilled' ? achs.value : []
-    rarities.value = rars.status === 'fulfilled' ? rars.value : {}
+    achievements.value = await getPlayerAchievements(appId)
   } catch (err) {
-    achievements.value = []
     error.value = err instanceof Error ? err.message : 'Unable to load achievements.'
   } finally {
     loadingAch.value = false
   }
+  // Load rarities in background — non-blocking, enriches display when ready
+  getAchievementRarities(appId).then(r => { rarities.value = r }).catch(() => {})
 }
 
 onMounted(async () => {
   try {
-    games.value = await getOwnedGames()
+    const allGames = await getOwnedGames()
+    // Sort by playtime so the default is a familiar game
+    games.value = [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)
     selectedGameId.value = games.value[0]?.appid ?? null
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load games.'
@@ -80,10 +79,13 @@ watch(selectedGameId, (appId) => {
 function gameHeaderUrl(appId: number) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
 }
+function libraryUrl(appId: number) {
+  return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/library_600x900.jpg`
+}
 
 function formatUnlockDate(ts: number): string {
-  if (!ts) return 'Unknown'
-  return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  if (!ts) return '?'
+  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
 
@@ -92,12 +94,12 @@ function formatUnlockDate(ts: number): string {
     <div class="section-h">
       <h2>{{ t('nav.achievements').toUpperCase() }}</h2>
       <span v-if="!loadingGames && achievements.length" class="meta">
-        {{ unlocked.length }} / {{ achievements.length }} · {{ completion }}% completion
+        {{ unlocked.length }} / {{ achievements.length }} · {{ completion }}{{ t('ach.completion') }}
       </span>
     </div>
 
     <p v-if="loadingGames" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading games…
+      {{ t('ach.loadingGames') }}
     </p>
 
     <template v-else>
@@ -112,7 +114,7 @@ function formatUnlockDate(ts: number): string {
               <span class="delta">▲ +{{ thisWeekUnlocks.length }}</span>
               <span class="muted">{{ t('dash.thisWeek') }}</span>
             </template>
-            <span v-else class="muted">of {{ achievements.length }}</span>
+            <span v-else class="muted">{{ t('ach.of') }} {{ achievements.length }}</span>
           </div>
         </div>
         <div class="pcard stat">
@@ -120,15 +122,15 @@ function formatUnlockDate(ts: number): string {
           <div class="stat-label">{{ t('ach.rare') }}</div>
           <div class="stat-value" style="color:var(--rare)">{{ rare.length }}</div>
           <div class="stat-foot">
-            <span v-if="rarestPct !== null" class="muted">rarest {{ rarestPct }}%</span>
-            <span v-else class="muted">rarity &lt; 10%</span>
+            <span v-if="rarestPct !== null" class="muted">{{ t('ach.rarestLabel') }} {{ rarestPct }}%</span>
+            <span v-else class="muted">{{ t('ach.rarityThreshold') }}</span>
           </div>
         </div>
         <div class="pcard stat">
           <div class="stat-icon"><PixelIcon kind="fire" :size="22" color="var(--xp)" /></div>
           <div class="stat-label">{{ t('ach.perfect') }}</div>
           <div class="stat-value" style="color:var(--xp)">{{ perfect }}</div>
-          <div class="stat-foot"><span class="muted">100% completion</span></div>
+          <div class="stat-foot"><span class="muted">{{ t('ach.perfectDesc') }}</span></div>
         </div>
         <div class="pcard stat">
           <div class="stat-icon"><PixelIcon kind="chart" :size="22" color="var(--good)" /></div>
@@ -137,9 +139,9 @@ function formatUnlockDate(ts: number): string {
           <div class="stat-foot">
             <template v-if="completion > 0">
               <span class="delta">▲ +{{ (completion * 0.07).toFixed(1) }}%</span>
-              <span class="muted">this month</span>
+              <span class="muted">{{ t('dash.thisMonth').toLowerCase() }}</span>
             </template>
-            <span v-else class="muted">this game</span>
+            <span v-else class="muted">{{ t('ach.thisGame') }}</span>
           </div>
         </div>
       </div>
@@ -150,7 +152,7 @@ function formatUnlockDate(ts: number): string {
           <PixelIcon kind="library" :size="14" color="var(--text-mute)" />
           <select
             v-model.number="selectedGameId"
-            style="background:none;border:none;outline:none;flex:1;color:var(--text);font:inherit;cursor:pointer"
+            style="background:var(--bg-deep);border:none;outline:none;flex:1;color:var(--text);font:inherit;cursor:pointer;padding:2px 0"
             @change="click()"
           >
             <option v-for="game in games" :key="game.appid" :value="game.appid">
@@ -165,7 +167,12 @@ function formatUnlockDate(ts: number): string {
       <!-- Progress card -->
       <div v-if="selectedGame && !loadingAch" class="pcard ach-game" style="margin-bottom:16px">
         <div class="acov" style="overflow:hidden">
-          <img :src="gameHeaderUrl(selectedGame.appid)" :alt="selectedGame.name" style="width:100%;height:100%;object-fit:cover" />
+          <img
+            :src="libraryUrl(selectedGame.appid)"
+            :alt="selectedGame.name"
+            style="width:100%;height:100%;object-fit:cover"
+            @error="($event.target as HTMLImageElement).src = gameHeaderUrl(selectedGame!.appid)"
+          />
         </div>
         <div>
           <div class="agname">{{ selectedGame.name }}</div>
@@ -174,15 +181,32 @@ function formatUnlockDate(ts: number): string {
             <div class="pbar" :class="pbarVariant"><i :style="{ width: `${completion}%` }" /></div>
           </div>
         </div>
-        <div class="pct">{{ completion }}%<small>COMPLETION</small></div>
+        <div class="pct">{{ completion }}%<small>{{ t('ach.completion').toUpperCase() }}</small></div>
       </div>
 
       <p v-if="loadingAch" style="color:var(--text-mute);padding:20px;text-align:center;font-family:var(--pixel);font-size:10px;">
-        Loading achievements…
+        {{ t('ach.loadingAch') }}
       </p>
-      <p v-else-if="achievements.length === 0" style="color:var(--text-mute);padding:20px;text-align:center;">
-        This game has no achievements.
-      </p>
+      <div v-else-if="achievements.length === 0 && selectedGame" class="pcard" style="overflow:hidden;margin-bottom:16px">
+        <div style="position:relative;height:160px;overflow:hidden">
+          <img
+            :src="libraryUrl(selectedGame.appid)"
+            :alt="selectedGame.name"
+            style="width:100%;height:100%;object-fit:cover;filter:blur(6px) brightness(0.25);transform:scale(1.08)"
+            @error="($event.target as HTMLImageElement).src = gameHeaderUrl(selectedGame!.appid)"
+          />
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+            <PixelIcon kind="trophy" :size="36" color="var(--text-mute)" style="opacity:0.4" />
+            <div style="font-family:var(--pixel);font-size:9px;letter-spacing:2px;color:var(--text-mute)">
+              {{ t('ach.noAch').toUpperCase() }}
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 20px;text-align:center">
+          <div style="font-size:12px;font-weight:600;margin-bottom:6px">{{ selectedGame.name }}</div>
+          <div style="font-size:11px;color:var(--text-mute);line-height:1.6">{{ t('ach.noAchDesc') }}</div>
+        </div>
+      </div>
 
       <!-- Achievement list -->
       <div v-else>
@@ -211,12 +235,12 @@ function formatUnlockDate(ts: number): string {
               </div>
               <div class="dur" :style="{ color: ach.achieved === 1 ? 'var(--xp)' : 'var(--text-mute)' }">
                 <template v-if="rarities[ach.apiname] !== undefined">
-                  {{ (rarities[ach.apiname] ?? 0).toFixed(1) }}%
+                  {{ Number(rarities[ach.apiname] ?? 0).toFixed(1) }}%
                   <small>{{ t('ach.rarity') }}</small>
                 </template>
                 <template v-else>
                   {{ ach.achieved === 1 ? '✓' : '○' }}
-                  <small>{{ ach.achieved === 1 ? t('ach.unlockedSuffix') : 'locked' }}</small>
+                  <small>{{ ach.achieved === 1 ? t('ach.unlockedSuffix') : t('ach.locked') }}</small>
                 </template>
               </div>
             </div>
@@ -253,7 +277,7 @@ function formatUnlockDate(ts: number): string {
                   :style="{ color: (rarities[ach.apiname] ?? 100) < 10 ? 'var(--rare)' : 'var(--accent)' }"
                 >
                   <template v-if="rarities[ach.apiname] !== undefined">
-                    {{ (rarities[ach.apiname] ?? 0).toFixed(1) }}%
+                    {{ Number(rarities[ach.apiname] ?? 0).toFixed(1) }}%
                   </template>
                   <template v-else>✓</template>
                   <small>{{ t('ach.rarity') }}</small>

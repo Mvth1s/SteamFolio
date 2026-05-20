@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { getOwnedGames } from '@/services/steamApi'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { getOwnedGames, getStoreGenres } from '@/services/steamApi'
 import type { LibrarySortOption, SteamOwnedGame } from '@/types/steam'
 import { sortAndFilterGames } from '@/utils/steamFormatters'
 import { useI18n } from '@/composables/useI18n'
@@ -39,16 +39,29 @@ function formatHours(minutes: number): string {
   return h > 0 ? `${h}h` : `${minutes}m`
 }
 
-const GENRES = ['RPG', 'ACTION', 'STRATEGY', 'INDIE', 'ADVENTURE', 'SIMULATION', 'SPORTS', 'PUZZLE']
+// Genre lazy-loading: fetch genres in parallel batches for all visible cards
+const genreCache = reactive(new Map<number, string[]>())
+let genreLoadTimer: ReturnType<typeof setTimeout> | null = null
 
-function genreFromName(name: string): string {
-  let h = 2166136261 >>> 0
-  for (let i = 0; i < name.length; i++) {
-    h ^= name.charCodeAt(i)
-    h = Math.imul(h, 16777619) >>> 0
+async function loadGenresFor(appids: number[]) {
+  const toLoad = appids.filter(id => !genreCache.has(id))
+  const BATCH = 5
+  for (let i = 0; i < toLoad.length; i += BATCH) {
+    await Promise.all(toLoad.slice(i, i + BATCH).map(async appid => {
+      try {
+        genreCache.set(appid, await getStoreGenres(appid))
+      } catch { genreCache.set(appid, []) }
+    }))
+    if (i + BATCH < toLoad.length) await new Promise(r => setTimeout(r, 300))
   }
-  return GENRES[h % GENRES.length]!
 }
+
+watch(filtered, (games) => {
+  if (genreLoadTimer) clearTimeout(genreLoadTimer)
+  genreLoadTimer = setTimeout(() => {
+    void loadGenresFor(games.map(g => g.appid))
+  }, 300)
+}, { immediate: true })
 
 function formatLastPlayed(ts: number): string {
   if (!ts) return ''
@@ -65,7 +78,7 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
   { value: 'playtime-desc', labelKey: 'lib.byPlay' },
   { value: 'name-asc',      labelKey: 'lib.alpha' },
   { value: 'name-desc',     labelKey: 'Z → A' },
-  { value: 'playtime-asc',  labelKey: 'lib.recent' },
+  { value: 'recent',        labelKey: 'lib.recent' },
 ]
 </script>
 
@@ -114,10 +127,14 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
       </div>
 
       <div v-else class="grid cards">
-        <div
+        <a
           v-for="game in filtered"
           :key="game.appid"
           class="game-card"
+          :href="`https://store.steampowered.com/app/${game.appid}/`"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="text-decoration:none;color:inherit"
         >
           <div class="gcover">
             <img
@@ -125,20 +142,25 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
               :alt="game.name"
               loading="lazy"
               style="width:100%;height:100%;object-fit:cover;display:block;"
+              @error="($event.target as HTMLImageElement).style.opacity = '0'"
             />
           </div>
           <div class="ginfo">
             <div class="gname">{{ game.name }}</div>
             <div class="gmeta">
               <span class="h">{{ formatHours(game.playtime_forever) }}</span>
-              <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">never played</span>
+              <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">{{ t('lib.neverPlayed') }}</span>
               <span v-else-if="game.rtime_last_played" style="color:var(--text-mute)">{{ formatLastPlayed(game.rtime_last_played) }}</span>
             </div>
-            <div class="gmeta" style="margin-top:4px">
-              <span style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)">{{ genreFromName(game.name) }}</span>
+            <div v-if="genreCache.get(game.appid)?.length" class="gmeta" style="margin-top:4px;flex-wrap:wrap;gap:4px">
+              <span
+                v-for="genre in genreCache.get(game.appid)"
+                :key="genre"
+                style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)"
+              >{{ genre }}</span>
             </div>
           </div>
-        </div>
+        </a>
       </div>
     </template>
   </div>

@@ -2,11 +2,11 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import InfoTip from '@/components/shared/InfoTip.vue'
-import { getOwnedGames, getFriends, getRecentlyPlayedGames } from '@/services/steamApi'
+import { getOwnedGames, getFriends, getRecentlyPlayedGames, getStoreGenres, getBadges, getPlayerAchievements, getAchievementRarities } from '@/services/steamApi'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
-import type { SteamOwnedGame, SteamRecentGame } from '@/types/steam'
+import type { SteamBadge, SteamOwnedGame, SteamRecentGame } from '@/types/steam'
 
 const { player } = usePlayerSummary()
 const { t } = useI18n()
@@ -14,15 +14,73 @@ const { click } = useSound()
 
 const games = ref<SteamOwnedGame[]>([])
 const recent = ref<SteamRecentGame[]>([])
+const badges = ref<SteamBadge[]>([])
 const friendsCount = ref<number | null>(null)
 const loading = ref(true)
+const realGenreMap = ref<Map<string, { hours: number; topGame: string }> | null>(null)
+
+interface RarestAch { name: string; game: string; pct: number }
+const rarestAch = ref<RarestAch | null>(null)
 
 onMounted(async () => {
-  const [g, f, r] = await Promise.allSettled([getOwnedGames(), getFriends(), getRecentlyPlayedGames()])
+  const [g, f, r, b] = await Promise.allSettled([
+    getOwnedGames(), getFriends(), getRecentlyPlayedGames(), getBadges(),
+  ])
   if (g.status === 'fulfilled') games.value = g.value
   if (f.status === 'fulfilled') friendsCount.value = f.value.length
   if (r.status === 'fulfilled') recent.value = r.value
+  if (b.status === 'fulfilled') badges.value = b.value
   loading.value = false
+
+  // Background: find rarest unlocked achievement across up to 3 recent games
+  if (r.status === 'fulfilled' && r.value.length) {
+    const gameIds = r.value.slice(0, 3).map(g => ({ appid: g.appid, name: g.name }))
+    Promise.all(
+      gameIds.map(async ({ appid, name }) => {
+        const [achs, rarities] = await Promise.all([getPlayerAchievements(appid), getAchievementRarities(appid)])
+        let best: RarestAch | null = null
+        for (const ach of achs) {
+          if (ach.achieved !== 1) continue
+          const pct = Number(rarities[ach.apiname] ?? 100)
+          if (!best || pct < best.pct) best = { name: ach.name ?? ach.apiname, game: name, pct }
+        }
+        return best
+      })
+    ).then(results => {
+      const winner = results.reduce<RarestAch | null>((best, cur) => {
+        if (!cur) return best
+        if (!best || cur.pct < best.pct) return cur
+        return best
+      }, null)
+      if (winner) rarestAch.value = winner
+    }).catch(() => {})
+  }
+
+  // Background: fetch genres for top 15 played games via server-side proxy
+  if (g.status === 'fulfilled' && g.value.length > 0) {
+    const top15 = [...g.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 15)
+    Promise.all(top15.map(async game => ({ game, genres: await getStoreGenres(game.appid) }))).then(results => {
+      const map = new Map<string, { hours: number; topGame: string; topHrs: number }>()
+      for (const { game, genres } of results) {
+        const hrs = Math.floor(game.playtime_forever / 60)
+        for (const genre of genres) {
+          const ex = map.get(genre)
+          if (!ex) {
+            map.set(genre, { hours: hrs, topGame: game.name, topHrs: hrs })
+          } else {
+            map.set(genre, {
+              hours: ex.hours + hrs,
+              topGame: hrs > ex.topHrs ? game.name : ex.topGame,
+              topHrs: Math.max(ex.topHrs, hrs),
+            })
+          }
+        }
+      }
+      if (map.size > 0) {
+        realGenreMap.value = new Map([...map.entries()].map(([k, v]) => [k, { hours: v.hours, topGame: v.topGame }]))
+      }
+    }).catch(() => {})
+  }
 })
 
 const totalHours = computed(() => Math.floor(games.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
@@ -33,41 +91,52 @@ const weeklyAvgHrs = computed(() => {
 })
 const topGames = computed(() => [...games.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 3))
 
-// Top3 tabs
 const top3Tab = ref<'month' | 'year' | 'alltime'>('alltime')
 const top3Games = computed(() => {
   if (top3Tab.value === 'alltime') return topGames.value
   return recent.value.slice(0, 3).map(r => games.value.find(g => g.appid === r.appid) ?? { appid: r.appid, name: r.name, playtime_forever: r.playtime_forever })
 })
 
-// Currently playing live timer
 const nowMs = ref(Date.now())
 let timerInterval: ReturnType<typeof setInterval> | null = null
 onMounted(() => { timerInterval = setInterval(() => { nowMs.value = Date.now() }, 1000) })
 onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
-const currentGame = computed(() => recent.value[0] ?? null)
+
+const isLive = computed(() => !!player.value?.gameid)
+const liveGameId = computed(() => player.value?.gameid ? Number(player.value.gameid) : null)
+const liveGameName = computed(() => player.value?.gameextrainfo ?? '')
+const lastPlayedGame = computed(() => recent.value[0] ?? null)
+
 const sessionStartMs = computed(() => Number(localStorage.getItem('sf-last-sync') ?? Date.now()))
 const sessionElapsed = computed(() => Math.max(0, Math.floor((nowMs.value - sessionStartMs.value) / 1000)))
 
-// ——— MOCK: genre donut (seeded from total hours to look plausible) ———
 const GENRE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)', 'var(--bad)']
-const GENRE_NAMES = ['RPG', 'Action', 'Strategy', 'Indie', 'Adventure']
 const genreData = computed(() => {
   if (totalHours.value === 0) return []
-  const base = totalHours.value
-  const weights = [0.38, 0.27, 0.18, 0.11, 0.06]
-  return GENRE_NAMES.map((name, i) => ({
-    name,
-    hours: Math.round(base * weights[i]!),
-    color: GENRE_COLORS[i]!,
-  }))
+  if (realGenreMap.value && realGenreMap.value.size > 0) {
+    return [...realGenreMap.value.entries()]
+      .sort(([, a], [, b]) => b.hours - a.hours)
+      .slice(0, 5)
+      .map(([name, { hours, topGame }], i) => ({
+        name,
+        hours,
+        topGame: topGame.length > 16 ? topGame.slice(0, 15) + '…' : topGame,
+        color: GENRE_COLORS[i]!,
+      }))
+  }
+  return [{ name: '…', hours: totalHours.value, topGame: '', color: GENRE_COLORS[0]! }]
 })
 const genreTotal = computed(() => genreData.value.reduce((s, g) => s + g.hours, 0))
 
-// Donut SVG helpers (conic-gradient approach)
 const donutSegments = computed(() => {
-  let angle = 0
+  if (genreData.value.length === 0) return []
   const r = 72, cx = 90, cy = 90
+  // Single segment fills 360° — SVG arc is degenerate when start==end, use two semicircles
+  if (genreData.value.length === 1) {
+    const g = genreData.value[0]!
+    return [{ ...g, d: `M ${cx - r} ${cy} A ${r} ${r} 0 1 0 ${cx + r} ${cy} A ${r} ${r} 0 1 0 ${cx - r} ${cy} Z` }]
+  }
+  let angle = 0
   return genreData.value.map(g => {
     const pct = g.hours / genreTotal.value
     const startAngle = angle
@@ -82,54 +151,28 @@ const donutSegments = computed(() => {
   })
 })
 
-// ——— MOCK: weekly bars (derived from playtime_2weeks, spread over 7 days) ———
-const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
-const weeklyBars = computed(() => {
-  const total2w = recent.value.reduce((s, g) => s + g.playtime_2weeks, 0) / 60
-  const baseHrs = total2w / 2
-  const weights = [0.08, 0.12, 0.10, 0.15, 0.18, 0.22, 0.15]
-  return DAYS.map((d, i) => ({ d, h: parseFloat((baseHrs * weights[i]!).toFixed(1)) }))
+// Real recently-played bars from playtime_2weeks data
+const recentBars = computed(() => {
+  if (!recent.value.length) return []
+  const maxMins = Math.max(...recent.value.map(g => g.playtime_2weeks), 1)
+  return recent.value.slice(0, 7).map(g => ({
+    name: g.name.length > 9 ? g.name.slice(0, 8) + '…' : g.name,
+    h: parseFloat((g.playtime_2weeks / 60).toFixed(1)),
+    pct: g.playtime_2weeks / maxMins * 100,
+  }))
 })
-const maxBar = computed(() => Math.max(...weeklyBars.value.map(w => w.h), 1))
+const maxRecentBar = computed(() => Math.max(...recentBars.value.map(b => b.h), 1))
 
-// ——— DLC Pie (games count from API, DLC estimated ~25%) ———
 const dlcEstimate = computed(() => Math.round(games.value.length * 0.25))
 const dlcTotal = computed(() => games.value.length + dlcEstimate.value)
 
-// ——— Achievement gauge (mock at 28% — realistic for most Steam accounts) ———
-const ACH_RATE = 0.284
-const ACH_TOTAL_EST = computed(() => Math.round(games.value.length * 8.2))
-const ACH_UNLOCKED_EST = computed(() => Math.round(ACH_TOTAL_EST.value * ACH_RATE))
+const totalBadgeXp = computed(() => badges.value.reduce((s, b) => s + b.xp, 0))
+const gameBadgeCount = computed(() => badges.value.filter(b => !!b.appid).length)
 
-// ——— WorldMap mock friend locations ———
-const WORLD_GRID = [
-  '..............................',
-  '....#####.......#####.........',
-  '..############.######....##...',
-  '..############.#######...##...',
-  '...##########.########.####...',
-  '....########..#######..####...',
-  '......######....####.......##.',
-  '.......####......##...........',
-  '........###.......#.....##....',
-  '........###.......##....###...',
-  '........###........#######....',
-  '.........##........######.....',
-  '..........#.........####......',
-  '............................##',
-  '...........................##.',
-  '..............................',
-]
-const FRIEND_PINS = [
-  { x: 6, y: 3, label: 'EU · 4 friends' },
-  { x: 4, y: 5, label: 'NA · 3 friends' },
-  { x: 22, y: 4, label: 'AS · 2 friends' },
-]
-const hoveredPin = ref<string | null>(null)
-
-const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
 
 function gameHeaderUrl(appId: number) { return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg` }
+function libraryUrl(appId: number) { return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/library_600x900.jpg` }
 function formatHours(mins: number) { return `${Math.floor(mins / 60)}h` }
 function formatRecent(mins2weeks: number) { const h = Math.floor(mins2weeks / 60); return h > 0 ? `${h}h ${mins2weeks % 60}m` : `${mins2weeks % 60}m` }
 function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` }
@@ -151,7 +194,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
           <InfoTip :content="t('tip.gamesOwned')" />
         </div>
         <div class="stat-value"><span v-if="loading">—</span><span v-else>{{ games.length }}</span></div>
-        <div class="stat-foot"><span class="muted">{{ playedCount }} played</span></div>
+        <div class="stat-foot"><span class="muted">{{ playedCount }} {{ t('common.played') }}</span></div>
       </div>
       <div class="pcard stat">
         <div class="stat-icon"><PixelIcon kind="clock" :size="22" color="var(--accent)" /></div>
@@ -161,9 +204,9 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
         <div class="stat-value">
           <span v-if="loading">—</span>
-          <template v-else>{{ totalHours.toLocaleString() }}<span class="unit">hrs</span></template>
+          <template v-else>{{ totalHours.toLocaleString() }}<span class="unit">{{ t('common.hrs') }}</span></template>
         </div>
-        <div class="stat-foot"><span class="muted">across all games</span></div>
+        <div class="stat-foot"><span class="muted">{{ t('dash.acrossAll') }}</span></div>
       </div>
       <div class="pcard stat">
         <div class="stat-icon"><PixelIcon kind="fire" :size="22" color="var(--xp)" /></div>
@@ -173,7 +216,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
         <div class="stat-value">
           <span v-if="loading">—</span>
-          <template v-else>{{ weeklyAvgHrs }}<span class="unit">hrs/wk</span></template>
+          <template v-else>{{ weeklyAvgHrs }}<span class="unit">{{ t('common.hrsWk') }}</span></template>
         </div>
         <div class="stat-foot"><span class="muted">{{ t('dash.thisWeek') }}</span></div>
       </div>
@@ -184,23 +227,37 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
           <InfoTip :content="t('tip.dlcOwned')" />
         </div>
         <div class="stat-value"><span v-if="loading">—</span><span v-else>{{ dlcEstimate }}</span></div>
-        <div class="stat-foot"><span class="muted">est. add-ons</span></div>
+        <div class="stat-foot"><span class="muted">{{ t('dash.estAddons') }}</span></div>
       </div>
     </div>
 
     <div class="spacer-lg" />
 
-    <!-- Currently playing -->
-    <div v-if="currentGame" class="pcard cp-card">
+    <!-- Currently playing (LIVE) -->
+    <div v-if="isLive" class="pcard cp-card">
       <div class="cp-cover">
-        <img :src="gameHeaderUrl(currentGame.appid)" :alt="currentGame.name" style="width:100%;height:100%;object-fit:cover" />
+        <img :src="gameHeaderUrl(liveGameId ?? 0)" :alt="liveGameName" style="width:100%;height:100%;object-fit:cover" />
         <div class="cp-badge"><span class="cp-live-dot" /> {{ t('dash.live') }}</div>
       </div>
       <div class="cp-meta">
         <div class="cp-label">{{ t('dash.currentlyPlaying') }}</div>
-        <div class="cp-game">{{ currentGame.name }}</div>
+        <div class="cp-game">{{ liveGameName }}</div>
         <div class="cp-timer">{{ formatHMS(sessionElapsed) }}</div>
-        <div class="cp-foot">{{ formatHours(currentGame.playtime_forever) }} {{ t('dash.hrsTotal') }}</div>
+        <div class="cp-foot">{{ t('dash.session') }}</div>
+      </div>
+    </div>
+
+    <!-- Last played (when not in a game) -->
+    <div v-else-if="lastPlayedGame" class="pcard cp-card">
+      <div class="cp-cover">
+        <img :src="gameHeaderUrl(lastPlayedGame.appid)" :alt="lastPlayedGame.name" style="width:100%;height:100%;object-fit:cover" />
+        <div class="cp-badge cp-badge-paused">{{ t('dash.lastPlayed') }}</div>
+      </div>
+      <div class="cp-meta">
+        <div class="cp-label">{{ t('dash.lastPlayed') }}</div>
+        <div class="cp-game">{{ lastPlayedGame.name }}</div>
+        <div class="cp-timer">{{ formatHours(lastPlayedGame.playtime_2weeks) }}<span style="font-size:14px;color:var(--text-mute)"> · {{ t('dash.last2weeks') }}</span></div>
+        <div class="cp-foot">{{ formatHours(lastPlayedGame.playtime_forever) }} {{ t('dash.hrsTotal') }}</div>
       </div>
     </div>
 
@@ -213,7 +270,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         <div class="pcard-h">
           <PixelIcon kind="chart" :size="14" color="var(--accent)" />
           <span class="label">{{ t('dash.genres') }}</span>
-          <span class="sub">{{ genreTotal.toLocaleString() }} {{ t('dash.hrsTotal') }}</span>
+          <span class="sub">top 15 {{ t('lib.totalGames').toLowerCase() }}</span>
         </div>
         <div class="donut-wrap">
           <div class="donut">
@@ -231,36 +288,39 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
               <div class="swatch" :style="{ background: g.color }" />
               <div style="display:flex;flex-direction:column;min-width:0">
                 <span style="font-size:12px">{{ g.name }}</span>
-                <span class="pct">{{ Math.round(g.hours / genreTotal * 100) }}%</span>
+                <span style="font-size:10px;color:var(--text-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.topGame }}</span>
               </div>
-              <span class="hrs">{{ g.hours }}h</span>
+              <span class="hrs">{{ Math.round(g.hours / genreTotal * 100) }}%</span>
             </div>
           </div>
         </div>
         <div v-if="genreData[0]" style="padding:12px 18px 18px;border-top:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--text-mute)">
           <span>{{ t('dash.leader') }} → <span style="color:var(--accent)">{{ genreData[0].name }}</span></span>
-          <span>{{ genreData[0].hours }}h · {{ Math.round(genreData[0].hours / genreTotal * 100) }}%</span>
+          <span>{{ Math.round(genreData[0].hours / genreTotal * 100) }}% · {{ genreData[0].topGame }}</span>
         </div>
       </div>
 
-      <!-- Weekly bars -->
+      <!-- Recently played bars (real playtime_2weeks data) -->
       <div class="pcard">
         <div class="pcard-h">
           <PixelIcon kind="clock" :size="14" color="var(--accent)" />
-          <span class="label">{{ t('dash.weekly') }}</span>
-          <span class="sub">{{ weeklyAvgHrs }} {{ t('dash.hrsPerDay') }}</span>
+          <span class="label">{{ t('dash.recentlyPlayed') }}</span>
+          <span class="sub">{{ t('dash.last2weeks') }}</span>
         </div>
-        <div class="bars">
-          <div v-for="w in weeklyBars" :key="w.d" class="bar-col">
-            <div class="val">{{ w.h }}h</div>
+        <div v-if="!recentBars.length" style="padding:20px;color:var(--text-mute);text-align:center;font-family:var(--pixel);font-size:9px">
+          {{ t('common.loading') }}
+        </div>
+        <div v-else class="bars">
+          <div v-for="b in recentBars" :key="b.name" class="bar-col">
+            <div class="val">{{ b.h }}h</div>
             <div class="bar-stack">
               <div
                 class="bar"
-                :class="{ hi: w.h === maxBar, lo: w.h < maxBar * 0.3 }"
-                :style="{ height: `${(w.h / maxBar) * 100}%`, minHeight: '4px' }"
+                :class="{ hi: b.h === maxRecentBar, lo: b.h < maxRecentBar * 0.3 }"
+                :style="{ height: `${(b.h / maxRecentBar) * 100}%`, minHeight: '4px' }"
               />
             </div>
-            <div class="label" :style="{ color: w.h === maxBar ? 'var(--accent)' : undefined }">{{ w.d }}</div>
+            <div class="label" :style="{ color: b.h === maxRecentBar ? 'var(--accent)' : undefined }">{{ b.name }}</div>
           </div>
         </div>
       </div>
@@ -283,16 +343,25 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
           >{{ label }}</button>
         </div>
       </div>
-      <div v-if="loading" style="padding:40px;text-align:center;color:var(--text-mute)">Loading…</div>
+      <div v-if="loading" style="padding:40px;text-align:center;color:var(--text-mute)">{{ t('common.loading') }}</div>
       <div v-else-if="top3Games.length" class="top3-grid">
-        <div v-for="(game, i) in top3Games" :key="game.appid" class="top3-card" :class="`rank-${i + 1}`">
+        <a
+          v-for="(game, i) in top3Games"
+          :key="game.appid"
+          class="top3-card"
+          :class="`rank-${i + 1}`"
+          :href="`https://store.steampowered.com/app/${game.appid}/`"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="text-decoration:none;color:inherit"
+        >
           <span class="rank-num">#{{ i + 1 }}</span>
           <div class="top3-cover" style="overflow:hidden">
             <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" />
           </div>
           <div class="top3-name">{{ game.name }}</div>
           <div class="top3-hours">{{ Math.floor(game.playtime_forever / 60) }}<span>h</span></div>
-        </div>
+        </a>
       </div>
     </div>
 
@@ -308,7 +377,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
             {{ t('dash.dlcRatio') }}
             <InfoTip :content="t('tip.dlcRatio')" />
           </span>
-          <span class="sub">{{ dlcTotal ? (dlcEstimate / games.length).toFixed(2) : '—' }} dlc/game</span>
+          <span class="sub">{{ dlcTotal ? (dlcEstimate / games.length).toFixed(2) : '—' }} {{ t('dash.dlcPerGame') }}</span>
         </div>
         <div style="display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;padding:16px 20px">
           <div style="width:120px;height:120px;position:relative">
@@ -318,13 +387,13 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
             }" />
             <div style="position:absolute;inset:22px;background:var(--bg-navy);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center">
               <div style="font-family:var(--pixel);font-size:9px;color:var(--accent)">{{ dlcTotal }}</div>
-              <div style="font-family:var(--mono);font-size:9px;color:var(--text-mute);margin-top:4px">items</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-mute);margin-top:4px">{{ t('common.items') }}</div>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:10px">
             <div class="dlc-row">
               <span class="dlc-sw" style="background:var(--accent)" />
-              <span>Games</span>
+              <span>{{ t('dash.games') }}</span>
               <span class="dlc-v">{{ games.length }}</span>
               <span class="dlc-p">{{ dlcTotal ? Math.round((games.length / dlcTotal) * 100) : 0 }}%</span>
             </div>
@@ -338,38 +407,33 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
       </div>
 
-      <!-- Achievement gauge -->
+      <!-- Badge stats + achievements link -->
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="pcard">
           <div class="pcard-h">
             <PixelIcon kind="trophy" :size="14" color="var(--accent)" />
-            <span class="label" style="display:inline-flex;align-items:center">
-              {{ t('dash.achRate') }}
-              <InfoTip :content="t('tip.achRate')" />
-            </span>
-            <span class="sub">~{{ ACH_UNLOCKED_EST.toLocaleString() }} / {{ ACH_TOTAL_EST.toLocaleString() }}</span>
+            <span class="label">{{ t('nav.achievements').toUpperCase() }}</span>
+            <span class="sub">{{ badges.length }} {{ t('dash.badgesEarned') }}</span>
           </div>
-          <div class="gauge">
-            <div class="gauge-arc" :style="{
-              background: `conic-gradient(from 270deg, var(--accent) 0deg ${ACH_RATE * 180}deg, var(--bg-panel) ${ACH_RATE * 180}deg 180deg, transparent 180deg)`
-            }">
-              <div class="gauge-inner">
-                <div class="gauge-val">{{ (ACH_RATE * 100).toFixed(1) }}<span>%</span></div>
-                <div class="gauge-sub">{{ t('dash.global') }}</div>
+          <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <div style="font-family:var(--pixel);font-size:18px;color:var(--xp)">{{ totalBadgeXp.toLocaleString() }}</div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--text-mute);margin-top:4px">{{ t('dash.totalXp') }}</div>
+              </div>
+              <div>
+                <div style="font-family:var(--pixel);font-size:18px;color:var(--accent)">{{ gameBadgeCount }}</div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--text-mute);margin-top:4px">{{ t('dash.gameBadges') }}</div>
               </div>
             </div>
-            <div class="gauge-label">{{ t('dash.nextMilestone') }}</div>
-          </div>
-          <div style="padding:0 20px 18px">
-            <div class="pbar"><i :style="{ width: `${ACH_RATE * 100}%` }" /></div>
-            <div class="spread" style="margin-top:12px;font-size:11px;color:var(--text-mute);font-family:var(--mono)">
-              <span>{{ t('dash.nextMilestone') }}</span>
-              <span>{{ Math.round((0.40 - ACH_RATE) * ACH_TOTAL_EST) }} {{ t('dash.toGo') }}</span>
-            </div>
+            <router-link
+              to="/achievements"
+              style="font-family:var(--pixel);font-size:8px;color:var(--accent);padding:8px 14px;border:1px solid var(--accent-dim);letter-spacing:1px;text-decoration:none;align-self:flex-start"
+            >{{ t('nav.achievements').toUpperCase() }} →</router-link>
           </div>
         </div>
 
-        <!-- Rarest achievement placeholder card -->
+        <!-- Rarest achievement -->
         <div class="pcard rare-card">
           <div class="rare-icon">
             <div style="position:absolute;inset:8px;background:radial-gradient(circle,var(--rare) 0%,var(--rare-dim) 60%,transparent 100%)" />
@@ -383,8 +447,14 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
                 {{ t('dash.rarest') }}
               </span>
             </div>
-            <div class="rtitle" style="margin-top:8px">— · check Achievements tab</div>
-            <div class="rmeta">{{ t('dash.achRate') }} · {{ (ACH_RATE * 100).toFixed(1) }}%</div>
+            <template v-if="rarestAch">
+              <div class="rtitle" style="margin-top:8px">{{ rarestAch.name }}</div>
+              <div class="rmeta" style="margin-top:6px">
+                <span class="rgame">{{ rarestAch.game }}</span>
+                · {{ rarestAch.pct.toFixed(1) }}%
+              </div>
+            </template>
+            <div v-else class="rtitle" style="margin-top:8px;color:var(--text-mute);font-size:9px">{{ t('common.loading') }}</div>
           </div>
         </div>
       </div>
@@ -392,64 +462,37 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
 
     <div class="spacer-lg" />
 
-    <!-- World Map + Recent Activity -->
-    <div class="grid split">
-      <!-- World map -->
-      <div class="pcard">
-        <div class="pcard-h">
-          <PixelIcon kind="friends" :size="14" color="var(--accent)" />
-          <span class="label">{{ t('dash.worldmap') }}</span>
-          <span class="sub">{{ friendsCount ?? '…' }} {{ t('friends.total') }}</span>
-        </div>
-        <div class="worldmap-wrap">
-          <div
-            class="worldmap"
-            :style="`grid-template-columns:repeat(30,1fr);grid-template-rows:repeat(16,1fr)`"
-          >
-            <template v-for="(row, y) in WORLD_GRID" :key="y">
-              <div
-                v-for="(cell, x) in row.split('')"
-                :key="`${x}-${y}`"
-                class="wm-cell"
-                :class="cell === '#' ? 'land' : 'sea'"
-              />
-            </template>
-            <div
-              v-for="pin in FRIEND_PINS"
-              :key="pin.label"
-              class="wm-pin"
-              :class="{ hot: hoveredPin === pin.label }"
-              :style="`left:${(pin.x / 30) * 100}%;top:${(pin.y / 16) * 100}%`"
-              @mouseenter="hoveredPin = pin.label"
-              @mouseleave="hoveredPin = null"
-            >
-              <span class="wm-dot" />
-              <span class="wm-ring" />
-              <span v-if="hoveredPin === pin.label" class="wm-label">{{ pin.label }}</span>
-            </div>
-          </div>
-        </div>
+    <!-- Recent activity feed (full width) -->
+    <div v-if="recent.length" class="pcard">
+      <div class="pcard-h">
+        <PixelIcon kind="controller" :size="14" color="var(--accent)" />
+        <span class="label">{{ t('dash.activity') }}</span>
+        <span class="sub">{{ t('dash.last2weeks') }}</span>
       </div>
-
-      <!-- Recent activity feed -->
-      <div v-if="recent.length" class="pcard">
-        <div class="pcard-h">
-          <PixelIcon kind="controller" :size="14" color="var(--accent)" />
-          <span class="label">{{ t('dash.activity') }}</span>
-          <span class="sub">last 2 weeks</span>
-        </div>
-        <div class="feed">
-          <div v-for="game in recent" :key="game.appid" class="feed-row">
-            <div class="ico" style="overflow:hidden">
-              <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" />
-            </div>
-            <div>
-              <div class="ftitle">{{ game.name }}</div>
-              <div class="fmeta">{{ formatHours(game.playtime_forever) }} total</div>
-            </div>
-            <div class="dur">{{ formatRecent(game.playtime_2weeks) }}<small>{{ t('dash.session') }}</small></div>
+      <div class="feed">
+        <a
+          v-for="game in recent"
+          :key="game.appid"
+          class="feed-row"
+          :href="`https://store.steampowered.com/app/${game.appid}/`"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="text-decoration:none;color:inherit"
+        >
+          <div class="ico" style="overflow:hidden">
+            <img
+              :src="libraryUrl(game.appid)"
+              :alt="game.name"
+              style="width:100%;height:100%;object-fit:cover"
+              @error="($event.target as HTMLImageElement).src = gameHeaderUrl(game.appid)"
+            />
           </div>
-        </div>
+          <div>
+            <div class="ftitle">{{ game.name }}</div>
+            <div class="fmeta">{{ formatHours(game.playtime_forever) }} {{ t('common.total') }}</div>
+          </div>
+          <div class="dur">{{ formatRecent(game.playtime_2weeks) }}<small>{{ t('dash.session') }}</small></div>
+        </a>
       </div>
     </div>
 

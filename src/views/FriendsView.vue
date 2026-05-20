@@ -12,7 +12,7 @@ const { click } = useSound()
 const friends = ref<SteamPlayer[]>([])
 const loading = ref(true)
 const error = ref('')
-const filter = ref<'all' | 'online' | 'in-game' | 'offline'>('all')
+const filter = ref<'all' | 'online' | 'offline'>('all')
 
 function statusKind(state: number): 'online' | 'in-game' | 'away' | 'offline' {
   if (state === 1) return 'online'
@@ -29,12 +29,10 @@ const sorted = computed(() => [...friends.value].sort((a, b) => {
 const visible = computed(() => {
   if (filter.value === 'all') return sorted.value
   if (filter.value === 'online') return sorted.value.filter(f => statusKind(f.personastate) !== 'offline')
-  if (filter.value === 'in-game') return sorted.value.filter(f => statusKind(f.personastate) === 'in-game')
   return sorted.value.filter(f => statusKind(f.personastate) === 'offline')
 })
 
 const onlineCount = computed(() => friends.value.filter(f => statusKind(f.personastate) !== 'offline').length)
-const inGameCount = computed(() => friends.value.filter(f => statusKind(f.personastate) === 'in-game').length)
 const offlineCount = computed(() => friends.value.filter(f => statusKind(f.personastate) === 'offline').length)
 
 function dotStyle(state: number): string {
@@ -72,7 +70,6 @@ onMounted(async () => {
       <span class="meta" v-if="!loading">
         {{ friends.length }} {{ t('friends.total') }}
         · {{ onlineCount }} {{ t('common.online').toLowerCase() }}
-        · {{ inGameCount }} {{ t('common.inGame').toLowerCase() }}
       </span>
     </div>
 
@@ -81,7 +78,6 @@ onMounted(async () => {
         v-for="[key, label] in ([
           ['all',     `${t('friends.all')} · ${friends.length}`],
           ['online',  `${t('friends.online')} · ${onlineCount}`],
-          ['in-game', `${t('friends.ingame')} · ${inGameCount}`],
           ['offline', `${t('friends.offline')} · ${offlineCount}`],
         ] as [string, string][])"
         :key="key"
@@ -96,12 +92,12 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading friends…
+      {{ t('friends.loading') }}
     </p>
     <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
 
     <div v-else-if="visible.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
-      No friends in this filter.
+      {{ t('friends.noFilter') }}
     </div>
 
     <div v-else class="grid friends">
@@ -128,12 +124,6 @@ onMounted(async () => {
             <span class="dot" :style="dotStyle(friend.personastate)" />
             <span>{{ getStatusLabel(friend.personastate) }}</span>
           </div>
-          <a
-            :href="friend.profileurl"
-            target="_blank"
-            rel="noopener noreferrer"
-            style="font-family:var(--pixel);font-size:7px;color:var(--accent);letter-spacing:1px;margin-top:6px;display:inline-block;"
-          >VIEW ↗</a>
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
-import PixelAvatar from '@/components/shared/PixelAvatar.vue'
 import BrandMark from '@/components/shared/BrandMark.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
@@ -21,6 +20,7 @@ const { player } = usePlayerSummary()
 const { t } = useI18n()
 const { hover, nav } = useSound()
 
+const appVersion = __APP_VERSION__
 const steamLevel = ref<number | null>(null)
 const { friends, load: loadFriends } = useFriends()
 const onlineFriendsCount = computed(() =>
@@ -60,7 +60,7 @@ function navigate(to: string) {
       <BrandMark :size="36" style="flex-shrink:0" />
       <div class="brand-name">
         STEAM<br />FOLIO
-        <small>{{ t('common.beta') }}</small>
+        <small>v{{ appVersion }}</small>
       </div>
     </div>
 
@@ -87,33 +87,47 @@ function navigate(to: string) {
       </button>
 
       <div class="nav-section-label" style="margin-top:14px">{{ t('nav.quick') }}</div>
-      <a
-        :href="player ? `https://store.steampowered.com/wishlist/profiles/${player.steamid}/` : '#'"
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
         class="nav-item"
+        :class="{ active: isActive('wishlist') }"
         :data-label="t('nav.wishlist')"
+        @click="navigate('/wishlist')"
         @mouseenter="hover()"
       >
-        <span class="nav-icon"><PixelIcon kind="star" :size="18" color="currentColor" /></span>
+        <span class="nav-icon"><PixelIcon kind="star" :size="18" :color="isActive('wishlist') ? 'var(--accent)' : 'currentColor'" /></span>
         <span>{{ t('nav.wishlist') }}</span>
-      </a>
-      <a
-        :href="player ? `${player.profileurl}recommended/` : '#'"
-        target="_blank"
-        rel="noopener noreferrer"
+      </button>
+      <button
         class="nav-item"
+        :class="{ active: isActive('reviews') }"
         :data-label="t('nav.reviews')"
+        @click="navigate('/reviews')"
         @mouseenter="hover()"
       >
-        <span class="nav-icon"><PixelIcon kind="chart" :size="18" color="currentColor" /></span>
+        <span class="nav-icon"><PixelIcon kind="chart" :size="18" :color="isActive('reviews') ? 'var(--accent)' : 'currentColor'" /></span>
         <span>{{ t('nav.reviews') }}</span>
-      </a>
+      </button>
+      <button
+        class="nav-item"
+        :class="{ active: isActive('screenshots') }"
+        :data-label="t('nav.screenshots')"
+        @click="navigate('/screenshots')"
+        @mouseenter="hover()"
+      >
+        <span class="nav-icon"><PixelIcon kind="image" :size="18" :color="isActive('screenshots') ? 'var(--accent)' : 'currentColor'" /></span>
+        <span>{{ t('nav.screenshots') }}</span>
+      </button>
     </nav>
 
     <div class="sidebar-footer">
       <div class="player-card">
-        <PixelAvatar :seed="player?.steamid ?? 'default'" :size="38" />
+        <img
+            v-if="player?.avatarfull"
+            :src="player.avatarfull"
+            :alt="player?.personaname"
+            style="width:38px;height:38px;object-fit:cover;flex-shrink:0;border:1px solid var(--line-soft)"
+          />
+          <div v-else style="width:38px;height:38px;background:var(--bg-panel);flex-shrink:0" />
         <div style="min-width:0">
           <div class="pc-name">{{ player?.personaname ?? '…' }}</div>
           <div class="pc-status">
