@@ -7,6 +7,8 @@ export interface SteamPlayer {
   loccountrycode?: string
   timecreated?: number
   personasummary?: string
+  gameid?: string
+  gameextrainfo?: string
 }
 
 export interface SteamOwnedGame {

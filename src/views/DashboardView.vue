@@ -40,12 +40,18 @@ const top3Games = computed(() => {
   return recent.value.slice(0, 3).map(r => games.value.find(g => g.appid === r.appid) ?? { appid: r.appid, name: r.name, playtime_forever: r.playtime_forever })
 })
 
-// Currently playing live timer
+// Currently playing / last played widget
 const nowMs = ref(Date.now())
 let timerInterval: ReturnType<typeof setInterval> | null = null
 onMounted(() => { timerInterval = setInterval(() => { nowMs.value = Date.now() }, 1000) })
 onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
-const currentGame = computed(() => recent.value[0] ?? null)
+
+// player.gameid is set by Steam when the user is actively in a game
+const isLive = computed(() => !!player.value?.gameid)
+const liveGameId = computed(() => player.value?.gameid ? Number(player.value.gameid) : null)
+const liveGameName = computed(() => player.value?.gameextrainfo ?? '')
+const lastPlayedGame = computed(() => recent.value[0] ?? null)
+
 const sessionStartMs = computed(() => Number(localStorage.getItem('sf-last-sync') ?? Date.now()))
 const sessionElapsed = computed(() => Math.max(0, Math.floor((nowMs.value - sessionStartMs.value) / 1000)))
 
@@ -190,17 +196,31 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
 
     <div class="spacer-lg" />
 
-    <!-- Currently playing -->
-    <div v-if="currentGame" class="pcard cp-card">
+    <!-- Currently playing (LIVE) -->
+    <div v-if="isLive" class="pcard cp-card">
       <div class="cp-cover">
-        <img :src="gameHeaderUrl(currentGame.appid)" :alt="currentGame.name" style="width:100%;height:100%;object-fit:cover" />
+        <img :src="gameHeaderUrl(liveGameId ?? 0)" :alt="liveGameName" style="width:100%;height:100%;object-fit:cover" />
         <div class="cp-badge"><span class="cp-live-dot" /> {{ t('dash.live') }}</div>
       </div>
       <div class="cp-meta">
         <div class="cp-label">{{ t('dash.currentlyPlaying') }}</div>
-        <div class="cp-game">{{ currentGame.name }}</div>
+        <div class="cp-game">{{ liveGameName }}</div>
         <div class="cp-timer">{{ formatHMS(sessionElapsed) }}</div>
-        <div class="cp-foot">{{ formatHours(currentGame.playtime_forever) }} {{ t('dash.hrsTotal') }}</div>
+        <div class="cp-foot">{{ t('dash.session') }}</div>
+      </div>
+    </div>
+
+    <!-- Last played (when not in a game) -->
+    <div v-else-if="lastPlayedGame" class="pcard cp-card">
+      <div class="cp-cover">
+        <img :src="gameHeaderUrl(lastPlayedGame.appid)" :alt="lastPlayedGame.name" style="width:100%;height:100%;object-fit:cover" />
+        <div class="cp-badge cp-badge-paused">{{ t('dash.lastPlayed') }}</div>
+      </div>
+      <div class="cp-meta">
+        <div class="cp-label">{{ t('dash.lastPlayed') }}</div>
+        <div class="cp-game">{{ lastPlayedGame.name }}</div>
+        <div class="cp-timer">{{ formatHours(lastPlayedGame.playtime_2weeks) }}<span style="font-size:14px;color:var(--text-mute)"> recent</span></div>
+        <div class="cp-foot">{{ formatHours(lastPlayedGame.playtime_forever) }} {{ t('dash.hrsTotal') }}</div>
       </div>
     </div>
 
