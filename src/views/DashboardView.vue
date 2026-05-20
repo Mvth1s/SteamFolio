@@ -107,31 +107,6 @@ const ACH_RATE = 0.284
 const ACH_TOTAL_EST = computed(() => Math.round(games.value.length * 8.2))
 const ACH_UNLOCKED_EST = computed(() => Math.round(ACH_TOTAL_EST.value * ACH_RATE))
 
-// ——— WorldMap mock friend locations ———
-const WORLD_GRID = [
-  '..............................',
-  '....#####.......#####.........',
-  '..############.######....##...',
-  '..############.#######...##...',
-  '...##########.########.####...',
-  '....########..#######..####...',
-  '......######....####.......##.',
-  '.......####......##...........',
-  '........###.......#.....##....',
-  '........###.......##....###...',
-  '........###........#######....',
-  '.........##........######.....',
-  '..........#.........####......',
-  '............................##',
-  '...........................##.',
-  '..............................',
-]
-const FRIEND_PINS = [
-  { x: 6, y: 3, label: 'EU · 4 friends' },
-  { x: 4, y: 5, label: 'NA · 3 friends' },
-  { x: 22, y: 4, label: 'AS · 2 friends' },
-]
-const hoveredPin = ref<string | null>(null)
 
 const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
 
@@ -412,63 +387,23 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
 
     <div class="spacer-lg" />
 
-    <!-- World Map + Recent Activity -->
-    <div class="grid split">
-      <!-- World map -->
-      <div class="pcard">
-        <div class="pcard-h">
-          <PixelIcon kind="friends" :size="14" color="var(--accent)" />
-          <span class="label">{{ t('dash.worldmap') }}</span>
-          <span class="sub">{{ friendsCount ?? '…' }} {{ t('friends.total') }}</span>
-        </div>
-        <div class="worldmap-wrap">
-          <div
-            class="worldmap"
-            :style="`grid-template-columns:repeat(30,1fr);grid-template-rows:repeat(16,1fr)`"
-          >
-            <template v-for="(row, y) in WORLD_GRID" :key="y">
-              <div
-                v-for="(cell, x) in row.split('')"
-                :key="`${x}-${y}`"
-                class="wm-cell"
-                :class="cell === '#' ? 'land' : 'sea'"
-              />
-            </template>
-            <div
-              v-for="pin in FRIEND_PINS"
-              :key="pin.label"
-              class="wm-pin"
-              :class="{ hot: hoveredPin === pin.label }"
-              :style="`left:${(pin.x / 30) * 100}%;top:${(pin.y / 16) * 100}%`"
-              @mouseenter="hoveredPin = pin.label"
-              @mouseleave="hoveredPin = null"
-            >
-              <span class="wm-dot" />
-              <span class="wm-ring" />
-              <span v-if="hoveredPin === pin.label" class="wm-label">{{ pin.label }}</span>
-            </div>
-          </div>
-        </div>
+    <!-- Recent activity feed (full width) -->
+    <div v-if="recent.length" class="pcard">
+      <div class="pcard-h">
+        <PixelIcon kind="controller" :size="14" color="var(--accent)" />
+        <span class="label">{{ t('dash.activity') }}</span>
+        <span class="sub">last 2 weeks</span>
       </div>
-
-      <!-- Recent activity feed -->
-      <div v-if="recent.length" class="pcard">
-        <div class="pcard-h">
-          <PixelIcon kind="controller" :size="14" color="var(--accent)" />
-          <span class="label">{{ t('dash.activity') }}</span>
-          <span class="sub">last 2 weeks</span>
-        </div>
-        <div class="feed">
-          <div v-for="game in recent" :key="game.appid" class="feed-row">
-            <div class="ico" style="overflow:hidden">
-              <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" />
-            </div>
-            <div>
-              <div class="ftitle">{{ game.name }}</div>
-              <div class="fmeta">{{ formatHours(game.playtime_forever) }} total</div>
-            </div>
-            <div class="dur">{{ formatRecent(game.playtime_2weeks) }}<small>{{ t('dash.session') }}</small></div>
+      <div class="feed">
+        <div v-for="game in recent" :key="game.appid" class="feed-row">
+          <div class="ico" style="overflow:hidden">
+            <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" />
           </div>
+          <div>
+            <div class="ftitle">{{ game.name }}</div>
+            <div class="fmeta">{{ formatHours(game.playtime_forever) }} total</div>
+          </div>
+          <div class="dur">{{ formatRecent(game.playtime_2weeks) }}<small>{{ t('dash.session') }}</small></div>
         </div>
       </div>
     </div>
