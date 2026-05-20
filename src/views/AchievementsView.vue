@@ -47,24 +47,23 @@ async function loadAchievements(appId: number) {
   loadingAch.value = true
   error.value = ''
   rarities.value = {}
+  achievements.value = []
   try {
-    const [achs, rars] = await Promise.allSettled([
-      getPlayerAchievements(appId),
-      getAchievementRarities(appId),
-    ])
-    achievements.value = achs.status === 'fulfilled' ? achs.value : []
-    rarities.value = rars.status === 'fulfilled' ? rars.value : {}
+    achievements.value = await getPlayerAchievements(appId)
   } catch (err) {
-    achievements.value = []
     error.value = err instanceof Error ? err.message : 'Unable to load achievements.'
   } finally {
     loadingAch.value = false
   }
+  // Load rarities in background — non-blocking, enriches display when ready
+  getAchievementRarities(appId).then(r => { rarities.value = r }).catch(() => {})
 }
 
 onMounted(async () => {
   try {
-    games.value = await getOwnedGames()
+    const allGames = await getOwnedGames()
+    // Sort by playtime so the default is a familiar game
+    games.value = [...allGames].sort((a, b) => b.playtime_forever - a.playtime_forever)
     selectedGameId.value = games.value[0]?.appid ?? null
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load games.'
