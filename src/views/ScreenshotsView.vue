@@ -21,9 +21,7 @@ function screenshotUrl(s: SteamScreenshot): string {
 
 onMounted(async () => {
   try {
-    const raw = await getScreenshots()
-    // Filter out items without a preview URL
-    screenshots.value = raw.filter(s => s.preview_url)
+    screenshots.value = await getScreenshots()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load screenshots.'
   } finally {
@@ -40,13 +38,14 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading screenshots…
+      {{ t('screenshots.loading') }}
     </p>
     <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
 
     <template v-else>
       <div v-if="screenshots.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
-        No public screenshots found.
+        <div>{{ t('screenshots.none') }}</div>
+        <div style="font-size:11px;margin-top:8px;color:var(--text-mute)">{{ t('screenshots.privateNote') }}</div>
       </div>
 
       <div v-else style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">

@@ -81,8 +81,8 @@ function gameHeaderUrl(appId: number) {
 }
 
 function formatUnlockDate(ts: number): string {
-  if (!ts) return 'Unknown'
-  return new Date(ts * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  if (!ts) return '?'
+  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
 
@@ -96,7 +96,7 @@ function formatUnlockDate(ts: number): string {
     </div>
 
     <p v-if="loadingGames" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading games…
+      {{ t('ach.loadingGames') }}
     </p>
 
     <template v-else>
@@ -177,10 +177,10 @@ function formatUnlockDate(ts: number): string {
       </div>
 
       <p v-if="loadingAch" style="color:var(--text-mute);padding:20px;text-align:center;font-family:var(--pixel);font-size:10px;">
-        Loading achievements…
+        {{ t('ach.loadingAch') }}
       </p>
       <p v-else-if="achievements.length === 0" style="color:var(--text-mute);padding:20px;text-align:center;">
-        This game has no achievements.
+        {{ t('ach.noAch') }}
       </p>
 
       <!-- Achievement list -->
@@ -215,7 +215,7 @@ function formatUnlockDate(ts: number): string {
                 </template>
                 <template v-else>
                   {{ ach.achieved === 1 ? '✓' : '○' }}
-                  <small>{{ ach.achieved === 1 ? t('ach.unlockedSuffix') : 'locked' }}</small>
+                  <small>{{ ach.achieved === 1 ? t('ach.unlockedSuffix') : t('ach.locked') }}</small>
                 </template>
               </div>
             </div>

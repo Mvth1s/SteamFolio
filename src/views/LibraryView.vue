@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { getOwnedGames } from '@/services/steamApi'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { getOwnedGames, getStoreGenres } from '@/services/steamApi'
 import type { LibrarySortOption, SteamOwnedGame } from '@/types/steam'
 import { sortAndFilterGames } from '@/utils/steamFormatters'
 import { useI18n } from '@/composables/useI18n'
@@ -38,6 +38,29 @@ function formatHours(minutes: number): string {
   const h = Math.floor(minutes / 60)
   return h > 0 ? `${h}h` : `${minutes}m`
 }
+
+// Genre lazy-loading: fetch genres progressively for visible cards (throttled)
+const genreCache = reactive(new Map<number, string>())
+let genreLoadTimer: ReturnType<typeof setTimeout> | null = null
+
+async function loadGenresFor(appids: number[]) {
+  const toLoad = appids.filter(id => !genreCache.has(id))
+  for (const appid of toLoad.slice(0, 30)) {
+    await new Promise(r => setTimeout(r, 200))
+    try {
+      const genres = await getStoreGenres(appid)
+      if (genres.length > 0) genreCache.set(appid, genres[0]!)
+      else genreCache.set(appid, '')
+    } catch { genreCache.set(appid, '') }
+  }
+}
+
+watch(filtered, (games) => {
+  if (genreLoadTimer) clearTimeout(genreLoadTimer)
+  genreLoadTimer = setTimeout(() => {
+    void loadGenresFor(games.slice(0, 30).map(g => g.appid))
+  }, 300)
+}, { immediate: true })
 
 function formatLastPlayed(ts: number): string {
   if (!ts) return ''
@@ -118,14 +141,18 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
               :alt="game.name"
               loading="lazy"
               style="width:100%;height:100%;object-fit:cover;display:block;"
+              @error="($event.target as HTMLImageElement).style.opacity = '0'"
             />
           </div>
           <div class="ginfo">
             <div class="gname">{{ game.name }}</div>
             <div class="gmeta">
               <span class="h">{{ formatHours(game.playtime_forever) }}</span>
-              <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">never played</span>
+              <span v-if="game.playtime_forever === 0" style="color:var(--text-mute)">{{ t('lib.neverPlayed') }}</span>
               <span v-else-if="game.rtime_last_played" style="color:var(--text-mute)">{{ formatLastPlayed(game.rtime_last_played) }}</span>
+            </div>
+            <div v-if="genreCache.get(game.appid)" class="gmeta" style="margin-top:4px">
+              <span style="font-family:var(--pixel);font-size:7px;letter-spacing:1px;color:var(--text-mute);padding:2px 5px;border:1px solid var(--line-soft)">{{ genreCache.get(game.appid) }}</span>
             </div>
           </div>
         </a>

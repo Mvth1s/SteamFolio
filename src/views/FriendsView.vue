@@ -92,12 +92,12 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
-      Loading friends…
+      {{ t('friends.loading') }}
     </p>
     <p v-else-if="error" style="color:var(--bad);padding:20px;">{{ error }}</p>
 
     <div v-else-if="visible.length === 0" class="pcard" style="padding:40px;text-align:center;color:var(--text-mute)">
-      No friends in this filter.
+      {{ t('friends.noFilter') }}
     </div>
 
     <div v-else class="grid friends">

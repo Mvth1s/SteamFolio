@@ -40,6 +40,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'common.searchHint': 'Search by game, genre, or studio',
     'common.noResults': 'No results',
     'common.keyboard': '↑↓ navigate · ↵ open · esc close',
+    'common.played': 'played',
+    'common.total': 'total',
+    'common.loading': 'Loading…',
+    'common.neverPlayed': 'never played',
 
     // dashboard
     'dash.overview': 'OVERVIEW',
@@ -74,6 +78,13 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'dash.rank': 'RANK',
     'dash.inLibrary': 'in library',
     'dash.lastSession': 'last session',
+    'dash.acrossAll': 'across all games',
+    'dash.estAddons': 'est. add-ons',
+    'dash.last2weeks': 'last 2 weeks',
+    'dash.recentlyPlayed': 'RECENTLY PLAYED',
+    'dash.totalXp': 'total badge XP',
+    'dash.gameBadges': 'game badges',
+    'dash.badgesEarned': 'badges earned',
 
     // tooltips
     'tip.gamesOwned': 'All games on your Steam account, including free titles and gifts.',
@@ -105,6 +116,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'lib.noMatch': 'No games match',
     'lib.totalGames': 'games',
     'lib.totalHrs': 'total hours',
+    'lib.neverPlayed': 'never played',
 
     // achievements
     'ach.unlocked': 'UNLOCKED',
@@ -115,6 +127,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'ach.recentUnlocks': 'RECENT UNLOCKS',
     'ach.rarity': 'RARITY',
     'ach.unlockedSuffix': 'unlocked',
+    'ach.loadingGames': 'Loading games…',
+    'ach.loadingAch': 'Loading achievements…',
+    'ach.noAch': 'This game has no achievements.',
+    'ach.locked': 'locked',
 
     // friends
     'friends.all': 'ALL',
@@ -123,6 +139,13 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'friends.offline': 'OFFLINE',
     'friends.addFriend': '+ ADD FRIEND',
     'friends.total': 'total',
+    'friends.loading': 'Loading friends…',
+    'friends.noFilter': 'No friends in this filter.',
+
+    // screenshots
+    'screenshots.loading': 'Loading screenshots…',
+    'screenshots.none': 'No public screenshots found.',
+    'screenshots.privateNote': 'Only public screenshots are visible.',
 
     // search palette
     'search.title': 'Global Search',
@@ -188,6 +211,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'common.searchHint': 'Rechercher par jeu, genre ou studio',
     'common.noResults': 'Aucun résultat',
     'common.keyboard': '↑↓ naviguer · ↵ ouvrir · esc fermer',
+    'common.played': 'joués',
+    'common.total': 'au total',
+    'common.loading': 'Chargement…',
+    'common.neverPlayed': 'jamais joué',
 
     'dash.overview': "VUE D'ENSEMBLE",
     'dash.gamesOwned': 'JEUX POSSÉDÉS',
@@ -221,6 +248,13 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'dash.rank': 'RANG',
     'dash.inLibrary': 'dans la bibliothèque',
     'dash.lastSession': 'dernière session',
+    'dash.acrossAll': 'tous jeux confondus',
+    'dash.estAddons': 'add-ons estimés',
+    'dash.last2weeks': '2 dernières semaines',
+    'dash.recentlyPlayed': 'JOUÉS RÉCEMMENT',
+    'dash.totalXp': 'XP total (badges)',
+    'dash.gameBadges': 'badges de jeux',
+    'dash.badgesEarned': 'badges gagnés',
 
     'tip.gamesOwned': 'Tous les jeux de votre compte Steam, y compris gratuits et cadeaux.',
     'tip.dlcOwned': 'Extensions et contenus additionnels possédés dans votre bibliothèque.',
@@ -249,6 +283,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'lib.noMatch': 'Aucun jeu ne correspond à',
     'lib.totalGames': 'jeux',
     'lib.totalHrs': 'heures au total',
+    'lib.neverPlayed': 'jamais joué',
 
     'ach.unlocked': 'DÉBLOQUÉS',
     'ach.rare': 'RARES (< 5%)',
@@ -258,6 +293,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'ach.recentUnlocks': 'DÉBLOCAGES RÉCENTS',
     'ach.rarity': 'RARETÉ',
     'ach.unlockedSuffix': 'débloqués',
+    'ach.loadingGames': 'Chargement des jeux…',
+    'ach.loadingAch': 'Chargement des succès…',
+    'ach.noAch': "Ce jeu n'a pas de succès.",
+    'ach.locked': 'verrouillé',
 
     'friends.all': 'TOUS',
     'friends.online': 'EN LIGNE',
@@ -265,6 +304,12 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'friends.offline': 'HORS LIGNE',
     'friends.addFriend': '+ AJOUTER UN AMI',
     'friends.total': 'au total',
+    'friends.loading': 'Chargement des amis…',
+    'friends.noFilter': 'Aucun ami dans ce filtre.',
+
+    'screenshots.loading': 'Chargement des captures…',
+    'screenshots.none': 'Aucune capture d\'écran publique trouvée.',
+    'screenshots.privateNote': 'Seules les captures publiques sont visibles.',
 
     'search.title': 'Recherche globale',
     'search.placeholder': 'rechercher jeux, genres, studios…',

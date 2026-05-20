@@ -52,6 +52,21 @@ function badgeGameName(badge: SteamBadge): string {
 const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
 function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
 
+function badgeImageUrl(badge: SteamBadge): string {
+  if (badge.appid) return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/badge_${badge.level}.png`
+  return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}.png`
+}
+
+function handleBadgeImgError(event: Event, badge: SteamBadge) {
+  const img = event.target as HTMLImageElement
+  img.onerror = null
+  if (badge.appid) {
+    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
+  } else {
+    img.style.display = 'none'
+  }
+}
+
 onMounted(async () => {
   const [lvl, games, friends, bdgs] = await Promise.allSettled([
     getSteamLevel(),
@@ -182,33 +197,20 @@ onMounted(async () => {
                 border: `1px solid ${badgeColor(i)}55`,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                padding: '4px', gap: '4px', overflow: 'hidden',
-                textDecoration: 'none',
+                gap: '6px', overflow: 'hidden', textDecoration: 'none', padding: '8px 4px',
               }"
             >
-              <!-- Game badge: show game header art -->
-              <template v-if="badge.appid">
-                <div style="width:100%;overflow:hidden;flex-shrink:0">
-                  <img
-                    :src="`https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`"
-                    loading="lazy"
-                    style="width:100%;height:auto;object-fit:cover;display:block"
-                    :alt="badgeGameName(badge)"
-                  />
-                </div>
-                <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 2px" :style="{ color: badgeColor(i) }">
-                  {{ badgeGameName(badge) || `#${badge.appid}` }}
-                  <span style="color:var(--text-mute);display:block">LVL {{ badge.level }} · {{ badge.xp }}XP</span>
-                </div>
-              </template>
-              <!-- Community badge: styled icon -->
-              <template v-else>
-                <PixelIcon kind="star" :size="28" :color="badgeColor(i)" />
-                <div style="font-family:var(--pixel);font-size:6px;letter-spacing:0.5px;text-align:center;line-height:1.6" :style="{ color: badgeColor(i) }">
-                  LVL {{ badge.level }}
-                  <span style="color:var(--text-mute);display:block">{{ badge.xp }} XP</span>
-                </div>
-              </template>
+              <img
+                :src="badgeImageUrl(badge)"
+                loading="lazy"
+                style="width:56px;height:56px;object-fit:contain;display:block;flex-shrink:0"
+                :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
+                @error="handleBadgeImgError($event, badge)"
+              />
+              <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.5;padding:0 2px" :style="{ color: badgeColor(i) }">
+                {{ badgeGameName(badge) || `#${badge.badgeid}` }}
+                <span style="color:var(--text-mute);display:block;margin-top:2px">LVL {{ badge.level }} · {{ badge.xp }}XP</span>
+              </div>
             </a>
             <div
               v-if="badges.length === 0"
