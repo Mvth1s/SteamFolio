@@ -142,6 +142,8 @@ export async function getItemIconHashes(appId: number): Promise<Record<string, s
     start_defid: '0',
   })
   const response = await fetch(`/api/steam?${queryParams.toString()}`)
+  // 403 = publisher key required; standard user key is not authorized for this endpoint
+  if (response.status === 403) return {}
   if (!response.ok) return {}
   const data = (await response.json()) as {
     response?: { itemdef?: { itemdefid: string; icon_url: string }[] }
