@@ -69,3 +69,15 @@ export interface SteamWishlistItem {
   priority: number
   date_added: number
 }
+
+export interface StoreGameDetails {
+  name: string
+  priceFinal: number
+  priceFormatted: string | null
+  priceOriginalFormatted: string | null
+  discountPercent: number
+  developers: string[]
+  publishers: string[]
+  releaseDate: string | null
+  comingSoon: boolean
+}

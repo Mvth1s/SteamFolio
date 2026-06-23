@@ -1,4 +1,4 @@
-import type { SteamAchievement, SteamBadgeStats, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamWishlistItem } from '@/types/steam'
+import type { SteamAchievement, SteamBadgeStats, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamWishlistItem, StoreGameDetails } from '@/types/steam'
 
 const steamId = import.meta.env.VITE_STEAM_ID
 
@@ -91,6 +91,47 @@ export async function getFriendsSummary(friendIds: string[]): Promise<SteamPlaye
 export async function getRecentlyPlayedGames(): Promise<SteamRecentGame[]> {
   const data = await fetchSteamApi<{ response: { games?: SteamRecentGame[] } }>('IPlayerService/GetRecentlyPlayedGames/v1/')
   return data.response.games ?? []
+}
+
+interface RawStoreData {
+  name?: string
+  price_overview?: { final: number; final_formatted: string; initial_formatted?: string; discount_percent: number }
+  developers?: string[]
+  publishers?: string[]
+  release_date?: { coming_soon: boolean; date: string }
+}
+
+export async function getStoreBatch(appIds: number[]): Promise<Map<number, StoreGameDetails>> {
+  if (!appIds.length) return new Map()
+  const params = new URLSearchParams({
+    appids: appIds.join(','),
+    filters: 'name,price_overview,developers,publishers,release_date',
+  })
+  try {
+    const res = await fetch(`/api/store?${params}`)
+    if (!res.ok) return new Map()
+    const data = await res.json() as Record<string, { success: boolean; data?: RawStoreData }>
+    const map = new Map<number, StoreGameDetails>()
+    for (const [appidStr, entry] of Object.entries(data)) {
+      if (!entry.success || !entry.data) continue
+      const d = entry.data
+      const disc = d.price_overview?.discount_percent ?? 0
+      map.set(Number(appidStr), {
+        name: d.name ?? '',
+        priceFinal: d.price_overview?.final ?? 0,
+        priceFormatted: d.price_overview?.final_formatted ?? null,
+        priceOriginalFormatted: disc > 0 ? (d.price_overview?.initial_formatted ?? null) : null,
+        discountPercent: disc,
+        developers: d.developers ?? [],
+        publishers: d.publishers ?? [],
+        releaseDate: d.release_date?.date ?? null,
+        comingSoon: d.release_date?.coming_soon ?? false,
+      })
+    }
+    return map
+  } catch {
+    return new Map()
+  }
 }
 
 export async function getWishlist(): Promise<SteamWishlistItem[]> {
