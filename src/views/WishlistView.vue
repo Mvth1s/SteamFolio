@@ -234,6 +234,7 @@ onMounted(async () => {
                 :alt="storeDetails.get(item.appid)?.name ?? `App ${item.appid}`"
                 loading="lazy"
                 style="width:100%;height:100%;object-fit:cover;display:block"
+                @error="($event.target as HTMLImageElement).style.visibility = 'hidden'"
               />
               <!-- Discount badge -->
               <span
