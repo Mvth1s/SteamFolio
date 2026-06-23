@@ -158,6 +158,14 @@ const donutSegments = computed(() => {
   })
 })
 
+const recentByLastPlayed = computed(() =>
+  [...recent.value].sort((a, b) => {
+    const aTs = games.value.find(g => g.appid === a.appid)?.rtime_last_played ?? 0
+    const bTs = games.value.find(g => g.appid === b.appid)?.rtime_last_played ?? 0
+    return bTs - aTs
+  })
+)
+
 // Real recently-played bars from playtime_2weeks data
 const recentBars = computed(() => {
   if (!recent.value.length) return []
@@ -478,7 +486,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
       </div>
       <div class="feed">
         <a
-          v-for="game in recent"
+          v-for="game in recentByLastPlayed"
           :key="game.appid"
           class="feed-row"
           :href="`https://store.steampowered.com/app/${game.appid}/`"
