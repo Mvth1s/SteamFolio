@@ -101,18 +101,20 @@ interface RawStoreData {
   release_date?: { coming_soon: boolean; date: string }
 }
 
-// Steam appdetails only accepts one appid at a time; retries on 429 with backoff
+// Steam appdetails only accepts one appid at a time; retries on 429 with long backoff
 export async function getStoreDetail(appId: number): Promise<StoreGameDetails | null> {
   const params = new URLSearchParams({
     appids: String(appId),
     filters: 'name,price_overview,developers,publishers,release_date',
   })
   const url = `/api/store?${params}`
-  for (let attempt = 0; attempt < 3; attempt++) {
+  const backoffs = [10000, 20000, 40000]
+  for (let attempt = 0; attempt <= backoffs.length; attempt++) {
     try {
       const res = await fetch(url)
       if (res.status === 429) {
-        await new Promise(r => setTimeout(r, 2000 * (attempt + 1)))
+        const delay = backoffs[attempt]
+        if (delay) await new Promise(r => setTimeout(r, delay))
         continue
       }
       if (!res.ok) return null

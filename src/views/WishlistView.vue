@@ -19,7 +19,7 @@ const error = ref('')
 const sort = ref<SortKey>('date-desc')
 
 const STORE_BASE = 'https://store.steampowered.com/app'
-const CONCURRENCY = 3
+const REQUEST_DELAY = 600
 const CACHE_KEY = 'sf:wishlist_store'
 const CACHE_TTL = 24 * 60 * 60 * 1000
 
@@ -120,19 +120,15 @@ async function loadAllDetails(appIds: number[]) {
     return
   }
 
-  let idx = 0
-  async function worker() {
-    while (idx < toFetch.length) {
-      const appId = toFetch[idx++]
-      const detail = await getStoreDetail(appId)
-      if (detail) {
-        storeDetails.set(appId, detail)
-        cache[appId] = { d: detail, t: now }
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)) } catch {}
-      }
+  for (const appId of toFetch) {
+    const detail = await getStoreDetail(appId)
+    if (detail) {
+      storeDetails.set(appId, detail)
+      cache[appId] = { d: detail, t: now }
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)) } catch {}
     }
+    await new Promise(r => setTimeout(r, REQUEST_DELAY))
   }
-  await Promise.allSettled(Array.from({ length: CONCURRENCY }, worker))
   detailsLoading.value = false
 }
 
