@@ -107,7 +107,7 @@ const liveGameId = computed(() => player.value?.gameid ? Number(player.value.gam
 const liveGameName = computed(() => player.value?.gameextrainfo ?? '')
 const lastPlayedGame = computed(() => recent.value[0] ?? null)
 
-const sessionStartMs = computed(() => Number(localStorage.getItem('sf-last-sync') ?? Date.now()))
+const sessionStartMs = ref(Date.now())
 const sessionElapsed = computed(() => Math.max(0, Math.floor((nowMs.value - sessionStartMs.value) / 1000)))
 
 const GENRE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)', 'var(--bad)']

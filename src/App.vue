@@ -11,14 +11,12 @@ import BottomNav from '@/components/ui/BottomNav.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useTheme, SF_THEMES } from '@/composables/useTheme'
 import { useSound } from '@/composables/useSound'
-import { useI18n } from '@/composables/useI18n'
 import { getOwnedGames } from '@/services/steamApi'
 import type { SteamOwnedGame } from '@/types/steam'
 
 const { player } = usePlayerSummary()
 const { themeKey } = useTheme()
 const { click } = useSound()
-const { t } = useI18n()
 const route = useRoute()
 
 const sidebarCollapsed = ref(false)
@@ -112,23 +110,6 @@ function triggerKonami() {
   konamiSeq.value = []
 }
 
-// ——— Cache stale banner ———
-const showStaleBanner = ref(false)
-
-onMounted(() => {
-  const last = localStorage.getItem('sf-last-sync')
-  if (last) {
-    const age = Date.now() - Number(last)
-    if (age > 2 * 24 * 60 * 60 * 1000) showStaleBanner.value = true
-  }
-  // Record this session as the latest sync
-  if (!last) localStorage.setItem('sf-last-sync', String(Date.now()))
-})
-
-function dismissStale() {
-  showStaleBanner.value = false
-  localStorage.setItem('sf-last-sync', String(Date.now()))
-}
 </script>
 
 <template>
@@ -152,15 +133,6 @@ function dismissStale() {
       :games="libraryGames"
       @close="paletteOpen = false"
     />
-
-    <!-- Cache stale banner -->
-    <Teleport to="body">
-      <div v-if="showStaleBanner" class="sf-cache-banner">
-        <span class="ic">⚠</span>
-        <div class="msg"><b>{{ t('cache.stale') }}</b></div>
-        <button class="dismiss" @click="dismissStale">{{ t('cache.dismiss').toUpperCase() }}</button>
-      </div>
-    </Teleport>
 
     <!-- Konami coin rain -->
     <Teleport to="body">
