@@ -15,7 +15,7 @@ const storeDetails = reactive(new Map<number, StoreGameDetails>())
 const loading = ref(true)
 const detailsLoading = ref(true)
 const error = ref('')
-const sort = ref<SortKey>('date-desc')
+const sort = ref<SortKey>('discount-desc')
 
 const STORE_BASE = 'https://store.steampowered.com/app'
 const INTER_REQUEST_DELAY = 300
@@ -272,11 +272,11 @@ onMounted(async () => {
                 <span v-else style="font-family:var(--mono);font-size:11px;color:var(--text-mute)">…</span>
               </div>
 
-              <!-- Developer -->
+              <!-- Publisher -->
               <div
-                v-if="storeDetails.get(item.appid)?.developers?.length"
+                v-if="storeDetails.get(item.appid)?.publishers?.length"
                 style="font-size:10px;color:var(--text-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-              >{{ storeDetails.get(item.appid)!.developers.join(', ') }}</div>
+              >{{ storeDetails.get(item.appid)!.publishers[0] }}</div>
 
               <!-- Dates -->
               <div style="display:flex;flex-direction:column;gap:2px;margin-top:auto;padding-top:6px">
