@@ -62,15 +62,29 @@ const xpPct = computed(() => {
 const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
 function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
 
+const BADGE_CDN = 'https://community.fastly.steamstatic.com/public/images/badges'
+
+function systemBadgeUrl(badgeid: number, level: number): string {
+  const lv = String(level).padStart(2, '0')
+  switch (badgeid) {
+    case 1:  return `${BADGE_CDN}/01_community/community${lv}_80.png`
+    case 2:  return `${BADGE_CDN}/02_years/steamyears${level}_54.png`
+    case 3:  return `${BADGE_CDN}/03_together/together${lv}_80.png`
+    case 4:  return `${BADGE_CDN}/04_saleitem/saleitem${lv}_80.png`
+    case 5:  return `${BADGE_CDN}/05_cardbadge/card${lv}_80.png`
+    case 13: return `${BADGE_CDN}/13_gamecollector/${level}_80.png`
+    default: return `${BADGE_CDN}/${badgeid}/${level}.png`
+  }
+}
+
 function badgeImageUrl(badge: SteamBadge): string {
   if (badge.appid && badge.communityitemid) {
     const iconHash = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
     if (iconHash)
       return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/${badge.appid}/${iconHash}.png`
-    // Fallback: game header art (appid is known, hash is not — requires publisher key)
     return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
   }
-  return `https://community.cloudflare.steamstatic.com/public/images/badges/${badge.badgeid}/${badge.level}.png`
+  return systemBadgeUrl(badge.badgeid, badge.level)
 }
 
 function handleBadgeImgError(event: Event) {
