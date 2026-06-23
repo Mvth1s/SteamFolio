@@ -17,6 +17,11 @@ const friendsCount = ref<number | null>(null)
 const badges = ref<SteamBadge[]>([])
 const badgeXpStats = ref<Omit<SteamBadgeStats, 'badges'> | null>(null)
 const badgeIconHashes = reactive(new Map<string, string>())
+const failedBadgeImages = reactive(new Set<string>())
+
+function badgeKey(badge: SteamBadge): string {
+  return `${badge.badgeid}_${badge.appid ?? 0}_${badge.communityitemid ?? ''}`
+}
 
 const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
 const showcaseGames = computed(() => [...allGames.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5))
@@ -89,10 +94,9 @@ function badgeImageUrl(badge: SteamBadge): string {
   return systemBadgeUrl(badge.badgeid, badge.level)
 }
 
-function handleBadgeImgError(event: Event) {
-  const img = event.target as HTMLImageElement
-  img.onerror = null
-  img.style.display = 'none'
+function handleBadgeImgError(event: Event, badge: SteamBadge) {
+  ;(event.target as HTMLImageElement).onerror = null
+  failedBadgeImages.add(badgeKey(badge))
 }
 
 onMounted(async () => {
@@ -238,12 +242,19 @@ onMounted(async () => {
               }"
             >
               <img
+                v-if="!failedBadgeImages.has(badgeKey(badge))"
                 :src="badgeImageUrl(badge)"
                 loading="lazy"
                 style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
-                @error="handleBadgeImgError($event)"
+                @error="handleBadgeImgError($event, badge)"
               />
+              <div
+                v-else
+                style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0.35"
+              >
+                <PixelIcon kind="star" :size="32" :color="badgeColor(i)" />
+              </div>
               <div style="font-family:var(--pixel);font-size:7px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 3px;width:100%;overflow:hidden" :style="{ color: badgeColor(i) }">
                 <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ badgeGameName(badge) || `#${badge.badgeid}` }}</div>
                 <div style="color:var(--text-mute);margin-top:2px;font-size:7px">{{ badge.xp }} XP</div>
