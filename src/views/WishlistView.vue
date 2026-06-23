@@ -217,17 +217,15 @@ onMounted(async () => {
                   v-if="storeDetails.get(item.appid)?.releaseDate"
                   style="font-family:var(--mono);font-size:10px;color:var(--text-mute)"
                 >
-                  <span style="color:var(--text-dim)">{{ t('wishlist.released') }} </span>
-                  <span v-if="storeDetails.get(item.appid)!.comingSoon" style="color:var(--xp)">
-                    {{ t('wishlist.comingSoon') }}
-                  </span>
-                  <span v-else>{{ storeDetails.get(item.appid)!.releaseDate }}</span>
+                  <span style="color:var(--text-dim)">{{ t('wishlist.released') }}</span>
+                  <span v-if="storeDetails.get(item.appid)!.comingSoon" style="color:var(--xp)"> {{ t('wishlist.comingSoon') }}</span>
+                  <span v-else> {{ storeDetails.get(item.appid)!.releaseDate }}</span>
                 </div>
                 <div
                   v-if="item.date_added"
                   style="font-family:var(--mono);font-size:10px;color:var(--text-mute)"
                 >
-                  <span style="color:var(--text-dim)">{{ t('wishlist.added') }} </span>{{ formatDate(item.date_added) }}
+                  <span style="color:var(--text-dim)">{{ t('wishlist.added') }}</span> {{ formatDate(item.date_added) }}
                 </div>
               </div>
             </div>
