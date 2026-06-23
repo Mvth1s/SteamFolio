@@ -134,11 +134,11 @@ export async function getPublishedFilesCount(fileType: string): Promise<number> 
 }
 
 export async function getScreenshots(): Promise<SteamScreenshot[]> {
-  const data = await fetchSteamApi<{ response?: { publishedfiledetails?: SteamScreenshot[] } }>(
+  const data = await fetchSteamApi<{ response?: { files?: SteamScreenshot[] } }>(
     'IPublishedFileService/GetUserFiles/v1/',
     { type: '5', appid: '0', numperpage: '100', return_short_description: '1' },
   )
-  return data.response?.publishedfiledetails ?? []
+  return data.response?.files ?? []
 }
 
 export async function getAchievementRarities(appId: number): Promise<Record<string, number>> {

@@ -34,7 +34,7 @@ onMounted(async () => {
   <div>
     <div class="section-h">
       <h2>{{ t('nav.screenshots').toUpperCase() }}</h2>
-      <span v-if="!loading" class="meta">{{ screenshots.length }} {{ t('lib.totalGames') }}</span>
+      <span v-if="!loading" class="meta">{{ screenshots.length }} {{ t('nav.screenshots').toLowerCase() }}</span>
     </div>
 
     <p v-if="loading" style="color:var(--text-mute);padding:40px;text-align:center;font-family:var(--pixel);font-size:10px;">
