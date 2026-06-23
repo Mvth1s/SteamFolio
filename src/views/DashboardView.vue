@@ -105,7 +105,14 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
 const isLive = computed(() => !!player.value?.gameid)
 const liveGameId = computed(() => player.value?.gameid ? Number(player.value.gameid) : null)
 const liveGameName = computed(() => player.value?.gameextrainfo ?? '')
-const lastPlayedGame = computed(() => recent.value[0] ?? null)
+const lastPlayedGame = computed(() => {
+  const game = [...games.value]
+    .filter(g => g.rtime_last_played && g.rtime_last_played > 0)
+    .sort((a, b) => (b.rtime_last_played ?? 0) - (a.rtime_last_played ?? 0))[0]
+  if (!game) return null
+  const recentEntry = recent.value.find(r => r.appid === game.appid)
+  return { ...game, playtime_2weeks: recentEntry?.playtime_2weeks ?? 0 }
+})
 
 const sessionStartMs = ref(Date.now())
 const sessionElapsed = computed(() => Math.max(0, Math.floor((nowMs.value - sessionStartMs.value) / 1000)))
