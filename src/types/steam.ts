@@ -69,12 +69,3 @@ export interface SteamWishlistItem {
   priority: number
   date_added: number
 }
-
-export interface SteamScreenshot {
-  publishedfileid: string
-  title: string
-  preview_url: string
-  app_name: string
-  time_created: number
-  creator_appid?: number
-}

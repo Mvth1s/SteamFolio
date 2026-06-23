@@ -1,4 +1,4 @@
-import type { SteamAchievement, SteamBadgeStats, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamScreenshot, SteamWishlistItem } from '@/types/steam'
+import type { SteamAchievement, SteamBadgeStats, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamWishlistItem } from '@/types/steam'
 
 const steamId = import.meta.env.VITE_STEAM_ID
 
@@ -119,26 +119,6 @@ export async function getStoreGenres(appId: number): Promise<string[]> {
   } catch {
     return []
   }
-}
-
-export async function getPublishedFilesCount(fileType: string): Promise<number> {
-  try {
-    const data = await fetchSteamApi<{ response?: { total?: number } }>(
-      'IPublishedFileService/GetUserFiles/v1/',
-      { appid: '0', numperpage: '1', filetype: fileType },
-    )
-    return data.response?.total ?? 0
-  } catch {
-    return 0
-  }
-}
-
-export async function getScreenshots(): Promise<SteamScreenshot[]> {
-  const data = await fetchSteamApi<{ response?: { files?: SteamScreenshot[] } }>(
-    'IPublishedFileService/GetUserFiles/v1/',
-    { filetype: '5', appid: '0', numperpage: '100', return_short_description: '1' },
-  )
-  return data.response?.files ?? []
 }
 
 export async function getAchievementRarities(appId: number): Promise<Record<string, number>> {

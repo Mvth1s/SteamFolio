@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSteamLevel, getOwnedGames, getFriends, getBadges, getEconomyIconUrls, getRecentlyPlayedGames, getPublishedFilesCount, getStoreGenres } from '@/services/steamApi'
+import { getSteamLevel, getOwnedGames, getFriends, getBadges, getEconomyIconUrls, getRecentlyPlayedGames, getStoreGenres } from '@/services/steamApi'
 import type { SteamBadge, SteamBadgeStats, SteamRecentGame } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
@@ -17,8 +17,6 @@ const friendsCount = ref<number | null>(null)
 const badges = ref<SteamBadge[]>([])
 const badgeXpStats = ref<Omit<SteamBadgeStats, 'badges'> | null>(null)
 const recentGames = ref<SteamRecentGame[]>([])
-const workshopCount = ref<number | null>(null)
-const screenshotCount = ref<number | null>(null)
 const uniqueGenreCount = ref<number | null>(null)
 const badgeIconHashes = reactive(new Map<string, string>())
 const failedBadgeImages = reactive(new Set<string>())
@@ -106,14 +104,12 @@ function handleBadgeImgError(event: Event, badge: SteamBadge) {
 }
 
 onMounted(async () => {
-  const [lvl, games, friends, bdgs, recent, workshop, screenshots] = await Promise.allSettled([
+  const [lvl, games, friends, bdgs, recent] = await Promise.allSettled([
     getSteamLevel(),
     getOwnedGames(),
     getFriends(),
     getBadges(),
     getRecentlyPlayedGames(),
-    getPublishedFilesCount('0'),
-    getPublishedFilesCount('5'),
   ])
   if (lvl.status === 'fulfilled') steamLevel.value = lvl.value
   if (games.status === 'fulfilled') allGames.value = games.value
@@ -132,8 +128,6 @@ onMounted(async () => {
     }).catch(() => {})
   }
   if (recent.status === 'fulfilled') recentGames.value = recent.value
-  if (workshop.status === 'fulfilled') workshopCount.value = workshop.value
-  if (screenshots.status === 'fulfilled') screenshotCount.value = screenshots.value
 
   // Background: count unique genres from top 10 most-played games
   if (games.status === 'fulfilled' && games.value.length) {
@@ -300,8 +294,6 @@ onMounted(async () => {
                 [t('profile.avgSession'), avgSessionHrs],
                 [t('profile.bestWeek'), bestWeekHrs],
                 [t('profile.genres'), uniqueGenreCount !== null ? `${uniqueGenreCount} genres` : allGames.length ? '…' : '—'],
-                [t('profile.screenshots'), screenshotCount !== null ? String(screenshotCount) : '…'],
-                [t('profile.workshop'), workshopCount !== null ? String(workshopCount) : '…'],
               ] as [string, string][])"
               :key="label"
               class="spread"

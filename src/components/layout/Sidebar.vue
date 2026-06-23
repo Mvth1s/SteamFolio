@@ -107,16 +107,6 @@ function navigate(to: string) {
         <span class="nav-icon"><PixelIcon kind="chart" :size="18" :color="isActive('reviews') ? 'var(--accent)' : 'currentColor'" /></span>
         <span>{{ t('nav.reviews') }}</span>
       </button>
-      <button
-        class="nav-item"
-        :class="{ active: isActive('screenshots') }"
-        :data-label="t('nav.screenshots')"
-        @click="navigate('/screenshots')"
-        @mouseenter="hover()"
-      >
-        <span class="nav-icon"><PixelIcon kind="image" :size="18" :color="isActive('screenshots') ? 'var(--accent)' : 'currentColor'" /></span>
-        <span>{{ t('nav.screenshots') }}</span>
-      </button>
     </nav>
 
     <div class="sidebar-footer">
