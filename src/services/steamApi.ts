@@ -1,4 +1,4 @@
-import type { SteamAchievement, SteamBadge, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamScreenshot, SteamWishlistItem } from '@/types/steam'
+import type { SteamAchievement, SteamBadgeStats, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamScreenshot, SteamWishlistItem } from '@/types/steam'
 
 const steamId = import.meta.env.VITE_STEAM_ID
 
@@ -98,9 +98,15 @@ export async function getWishlist(): Promise<SteamWishlistItem[]> {
   return data.response.items ?? []
 }
 
-export async function getBadges(): Promise<SteamBadge[]> {
-  const data = await fetchSteamApi<{ response: { badges?: SteamBadge[] } }>('IPlayerService/GetBadges/v1/')
-  return data.response.badges ?? []
+export async function getBadges(): Promise<SteamBadgeStats> {
+  const data = await fetchSteamApi<{ response: Partial<SteamBadgeStats> }>('IPlayerService/GetBadges/v1/')
+  return {
+    badges: data.response.badges ?? [],
+    player_xp: data.response.player_xp ?? 0,
+    player_level: data.response.player_level ?? 0,
+    player_xp_needed_to_level_up: data.response.player_xp_needed_to_level_up ?? 0,
+    player_xp_needed_current_level: data.response.player_xp_needed_current_level ?? 0,
+  }
 }
 
 export async function getStoreGenres(appId: number): Promise<string[]> {

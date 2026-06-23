@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { getSteamLevel, getOwnedGames, getFriends, getBadges, getItemIconHashes } from '@/services/steamApi'
-import type { SteamBadge } from '@/types/steam'
+import type { SteamBadge, SteamBadgeStats } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { formatUnixDate, getStatusLabel } from '@/utils/steamFormatters'
@@ -15,6 +15,7 @@ const steamLevel = ref<number | null>(null)
 const allGames = ref<SteamOwnedGame[]>([])
 const friendsCount = ref<number | null>(null)
 const badges = ref<SteamBadge[]>([])
+const badgeXpStats = ref<Omit<SteamBadgeStats, 'badges'> | null>(null)
 const badgeIconHashes = reactive(new Map<string, string>())
 
 const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
@@ -50,6 +51,14 @@ function badgeGameName(badge: SteamBadge): string {
   return name.length > 14 ? name.slice(0, 13) + '…' : name
 }
 
+const xpPct = computed(() => {
+  const s = badgeXpStats.value
+  if (!s) return 0
+  const progress = s.player_xp - s.player_xp_needed_current_level
+  const span = progress + s.player_xp_needed_to_level_up
+  return span > 0 ? Math.round((progress / span) * 100) : 0
+})
+
 const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
 function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
 
@@ -58,8 +67,10 @@ function badgeImageUrl(badge: SteamBadge): string {
     const iconHash = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
     if (iconHash)
       return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/${badge.appid}/${iconHash}.png`
+    // Fallback: game header art (appid is known, hash is not — requires publisher key)
+    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
   }
-  return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}.png`
+  return `https://community.cloudflare.steamstatic.com/public/images/badges/${badge.badgeid}/${badge.level}.png`
 }
 
 function handleBadgeImgError(event: Event) {
@@ -79,7 +90,9 @@ onMounted(async () => {
   if (games.status === 'fulfilled') allGames.value = games.value
   if (friends.status === 'fulfilled') friendsCount.value = friends.value.length
   if (bdgs.status === 'fulfilled') {
-    badges.value = [...bdgs.value].sort((a, b) => b.xp - a.xp).slice(0, 8)
+    const { badges: bdgList, ...xpStats } = bdgs.value
+    badgeXpStats.value = xpStats
+    badges.value = [...bdgList].sort((a, b) => b.xp - a.xp).slice(0, 8)
     // Background: fetch item icon hashes for each unique game that has a badge
     const appIds = [...new Set(badges.value.filter(b => b.appid && b.communityitemid).map(b => b.appid!))]
     Promise.all(appIds.map(async appId => {
@@ -129,10 +142,10 @@ onMounted(async () => {
                 {{ t('common.lvl') }} {{ steamLevel }}
               </span>
               <span style="font-family:var(--mono);font-size:11px;color:var(--text-mute)">
-                → {{ t('common.lvl') }} {{ steamLevel + 1 }}
+                {{ badgeXpStats ? `${(badgeXpStats.player_xp - badgeXpStats.player_xp_needed_current_level).toLocaleString()} / ${(badgeXpStats.player_xp - badgeXpStats.player_xp_needed_current_level + badgeXpStats.player_xp_needed_to_level_up).toLocaleString()} XP` : '' }} → {{ t('common.lvl') }} {{ steamLevel + 1 }}
               </span>
             </div>
-            <div class="pbar xp"><i style="width:68%" /></div>
+            <div class="pbar xp"><i :style="{ width: `${xpPct}%` }" /></div>
           </div>
 
           <div class="quick-stats">
