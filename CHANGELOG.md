@@ -1,3 +1,40 @@
+# [1.1.0](https://github.com/Mvth1s/SteamFolio/compare/v1.0.0...v1.1.0) (2026-06-23)
+
+
+### Bug Fixes
+
+* **dashboard:** replace year/month tabs with 2weeks in top3 widget ([4eae2c3](https://github.com/Mvth1s/SteamFolio/commit/4eae2c3a2cb9b17850eebc91352ad820a4811069))
+* **dashboard:** show true last-played game by rtime_last_played ([28ebc5c](https://github.com/Mvth1s/SteamFolio/commit/28ebc5cf47c605a7ecf70f497ed053e503d1aa91))
+* **dashboard:** sort activity feed by rtime_last_played ([d209ed1](https://github.com/Mvth1s/SteamFolio/commit/d209ed113645ad65c4f644fd39584d348b0a761e))
+* **dashboard:** top3 month/year now filter by rtime_last_played ([c6f17e8](https://github.com/Mvth1s/SteamFolio/commit/c6f17e875bc099626c992be09c25cd601ab7b484))
+* graceful 403 on GetItemDefs, prevent genre-load accumulation ([8b6d20c](https://github.com/Mvth1s/SteamFolio/commit/8b6d20ca276be612422a82a2b7789b1b5e42168c))
+* **profile:** badge image URLs via fastly CDN with badgeid lookup ([8e2ee5c](https://github.com/Mvth1s/SteamFolio/commit/8e2ee5c5521af4e586d60735450b901ff2777f9f))
+* **profile:** badge URLs from verified live profile data ([a7f1e66](https://github.com/Mvth1s/SteamFolio/commit/a7f1e66bd9eb52f72feb688aeac264dca5c808bd))
+* **profile:** correct badge URL mappings from live profile data ([7f24f7b](https://github.com/Mvth1s/SteamFolio/commit/7f24f7bbddcdec14f4fb6b1c0715dd9a1332cd2b))
+* **profile:** game badge images via GetAssetClassInfo, readable text ([2f30225](https://github.com/Mvth1s/SteamFolio/commit/2f30225fc7df43b9388b85cb243b9b09ee2fcfd0))
+* **profile:** real XP bar and correct badge image fallbacks ([0803d45](https://github.com/Mvth1s/SteamFolio/commit/0803d45af9181784f729d16bec09b23ad0c19c7b))
+* **profile:** show star placeholder when badge image fails to load ([8c7467e](https://github.com/Mvth1s/SteamFolio/commit/8c7467e573fdab3c63ad7ba090fee97ea0a718b9))
+* **profile:** use badges CDN URL as fallback instead of steam/apps header ([0146314](https://github.com/Mvth1s/SteamFolio/commit/01463146bd95ee9f50adda2835b36f7ca9647f3f))
+* remove sf-last-sync localStorage, always show fresh data ([e442457](https://github.com/Mvth1s/SteamFolio/commit/e44245743d667a7f31761ef31d2fe45fc4cf320c))
+* **screenshots:** use 'filetype' not 'type' for GetUserFiles/v1 ([bcd9270](https://github.com/Mvth1s/SteamFolio/commit/bcd9270a9fecf7e0314e8d46d7bcc4c42d2f36f5))
+* **screenshots:** use correct response field 'files' from GetUserFiles/v1 ([f63aa95](https://github.com/Mvth1s/SteamFolio/commit/f63aa95b2e69e62b64bade83ff2efdf4bcd1a019))
+* **wishlist:** 429 retry, date format, price label ([0030dc0](https://github.com/Mvth1s/SteamFolio/commit/0030dc0caeaed1fad7c67210721d49af93860e9e))
+* **wishlist:** flex dates, localStorage cache, reliable spaces ([a8957e0](https://github.com/Mvth1s/SteamFolio/commit/a8957e0a4ae0d2e677a2e8ff5d68d5de65025dfd))
+* **wishlist:** hide broken header images on load error ([aae5cf9](https://github.com/Mvth1s/SteamFolio/commit/aae5cf9b42f8506998e24d180822e4259e9c47f7))
+* **wishlist:** non-null assert on toFetch array access for TS strict mode ([d32ae7d](https://github.com/Mvth1s/SteamFolio/commit/d32ae7dd5c3491d94f01b657cea4eef7e556bd96))
+* **wishlist:** sequential loading + aggressive 429 backoff to fix missing names ([0cd68cf](https://github.com/Mvth1s/SteamFolio/commit/0cd68cff0406f4fe2fec6f6de92a98c26a5a63c1))
+* **wishlist:** show publisher instead of developers, default sort by discount ([24e2655](https://github.com/Mvth1s/SteamFolio/commit/24e2655345efb8a4fed0510df5be89cde2f4324e))
+* **wishlist:** store proxy comma encoding + spacing ([f78d3e9](https://github.com/Mvth1s/SteamFolio/commit/f78d3e9513d5b611a6c384028ca5baeba7c52048))
+* **wishlist:** switch to individual store requests with concurrency pool ([6a4a4e4](https://github.com/Mvth1s/SteamFolio/commit/6a4a4e421a2e9fd95aae392218b840aac3a41965))
+* **wishlist:** use 'basic' filter instead of 'name' to get game names from store API ([f7a08aa](https://github.com/Mvth1s/SteamFolio/commit/f7a08aabd21bbc400504cf91528104017e7a43bb))
+
+
+### Features
+
+* **profile:** dynamic Quick Facts from real API data ([a10eefd](https://github.com/Mvth1s/SteamFolio/commit/a10eefdaa0b3b957fb2d86ce0a01aecdfa582ff5))
+* **wishlist:** progress bar + 2-worker rate gate for faster loading ([ea53c3a](https://github.com/Mvth1s/SteamFolio/commit/ea53c3a723df4824731b2ca95a841d7e370ddb1d))
+* **wishlist:** sort, rich cards, progressive store details ([d88ff78](https://github.com/Mvth1s/SteamFolio/commit/d88ff7837faca5807d9ceed65fc6cefce0a82c69))
+
 # 1.0.0 (2026-05-20)
 
 
