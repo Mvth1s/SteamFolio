@@ -91,15 +91,14 @@ const weeklyAvgHrs = computed(() => {
 })
 const topGames = computed(() => [...games.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 3))
 
-const top3Tab = ref<'month' | 'year' | 'alltime'>('alltime')
+const top3Tab = ref<'2weeks' | 'alltime'>('alltime')
 const top3Games = computed(() => {
   if (top3Tab.value === 'alltime') return topGames.value
-  const nowSec = Date.now() / 1000
-  const cutoff = top3Tab.value === 'month' ? nowSec - 30 * 86400 : nowSec - 365 * 86400
-  return [...games.value]
-    .filter(g => g.rtime_last_played && g.rtime_last_played >= cutoff)
-    .sort((a, b) => b.playtime_forever - a.playtime_forever)
+  // playtime_2weeks is the only period-specific playtime Steam exposes
+  return [...recent.value]
+    .sort((a, b) => b.playtime_2weeks - a.playtime_2weeks)
     .slice(0, 3)
+    .map(r => games.value.find(g => g.appid === r.appid) ?? { appid: r.appid, name: r.name, playtime_forever: r.playtime_forever })
 })
 
 const nowMs = ref(Date.now())
@@ -355,7 +354,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         <span class="label">{{ t('dash.top3') }}</span>
         <div style="margin-left:auto;display:flex;gap:4px">
           <button
-            v-for="([key, label]) in ([['alltime', t('dash.allTime')], ['year', t('dash.thisYear')], ['month', t('dash.thisMonth')]] as [string,string][])"
+            v-for="([key, label]) in ([['alltime', t('dash.allTime')], ['2weeks', t('dash.last2weeks')]] as [string,string][])"
             :key="key"
             class="mini-tab"
             :class="{ active: top3Tab === key }"
