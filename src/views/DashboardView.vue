@@ -29,7 +29,7 @@ onMounted(async () => {
   if (g.status === 'fulfilled') games.value = g.value
   if (f.status === 'fulfilled') friendsCount.value = f.value.length
   if (r.status === 'fulfilled') recent.value = r.value
-  if (b.status === 'fulfilled') badges.value = b.value
+  if (b.status === 'fulfilled') badges.value = b.value.badges
   loading.value = false
 
   // Background: find rarest unlocked achievement across up to 3 recent games
@@ -91,10 +91,14 @@ const weeklyAvgHrs = computed(() => {
 })
 const topGames = computed(() => [...games.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 3))
 
-const top3Tab = ref<'month' | 'year' | 'alltime'>('alltime')
+const top3Tab = ref<'2weeks' | 'alltime'>('alltime')
 const top3Games = computed(() => {
   if (top3Tab.value === 'alltime') return topGames.value
-  return recent.value.slice(0, 3).map(r => games.value.find(g => g.appid === r.appid) ?? { appid: r.appid, name: r.name, playtime_forever: r.playtime_forever })
+  // playtime_2weeks is the only period-specific playtime Steam exposes
+  return [...recent.value]
+    .sort((a, b) => b.playtime_2weeks - a.playtime_2weeks)
+    .slice(0, 3)
+    .map(r => games.value.find(g => g.appid === r.appid) ?? { appid: r.appid, name: r.name, playtime_forever: r.playtime_forever })
 })
 
 const nowMs = ref(Date.now())
@@ -105,9 +109,16 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval) })
 const isLive = computed(() => !!player.value?.gameid)
 const liveGameId = computed(() => player.value?.gameid ? Number(player.value.gameid) : null)
 const liveGameName = computed(() => player.value?.gameextrainfo ?? '')
-const lastPlayedGame = computed(() => recent.value[0] ?? null)
+const lastPlayedGame = computed(() => {
+  const game = [...games.value]
+    .filter(g => g.rtime_last_played && g.rtime_last_played > 0)
+    .sort((a, b) => (b.rtime_last_played ?? 0) - (a.rtime_last_played ?? 0))[0]
+  if (!game) return null
+  const recentEntry = recent.value.find(r => r.appid === game.appid)
+  return { ...game, playtime_2weeks: recentEntry?.playtime_2weeks ?? 0 }
+})
 
-const sessionStartMs = computed(() => Number(localStorage.getItem('sf-last-sync') ?? Date.now()))
+const sessionStartMs = ref(Date.now())
 const sessionElapsed = computed(() => Math.max(0, Math.floor((nowMs.value - sessionStartMs.value) / 1000)))
 
 const GENRE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)', 'var(--bad)']
@@ -150,6 +161,14 @@ const donutSegments = computed(() => {
     return { ...g, d: `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z` }
   })
 })
+
+const recentByLastPlayed = computed(() =>
+  [...recent.value].sort((a, b) => {
+    const aTs = games.value.find(g => g.appid === a.appid)?.rtime_last_played ?? 0
+    const bTs = games.value.find(g => g.appid === b.appid)?.rtime_last_played ?? 0
+    return bTs - aTs
+  })
+)
 
 // Real recently-played bars from playtime_2weeks data
 const recentBars = computed(() => {
@@ -335,7 +354,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         <span class="label">{{ t('dash.top3') }}</span>
         <div style="margin-left:auto;display:flex;gap:4px">
           <button
-            v-for="([key, label]) in ([['alltime', t('dash.allTime')], ['year', t('dash.thisYear')], ['month', t('dash.thisMonth')]] as [string,string][])"
+            v-for="([key, label]) in ([['alltime', t('dash.allTime')], ['2weeks', t('dash.last2weeks')]] as [string,string][])"
             :key="key"
             class="mini-tab"
             :class="{ active: top3Tab === key }"
@@ -344,7 +363,8 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
       </div>
       <div v-if="loading" style="padding:40px;text-align:center;color:var(--text-mute)">{{ t('common.loading') }}</div>
-      <div v-else-if="top3Games.length" class="top3-grid">
+      <div v-else-if="!top3Games.length" style="padding:40px;text-align:center;color:var(--text-mute);font-family:var(--pixel);font-size:9px">{{ t('lib.noMatch') }}</div>
+      <div v-else class="top3-grid">
         <a
           v-for="(game, i) in top3Games"
           :key="game.appid"
@@ -471,7 +491,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
       </div>
       <div class="feed">
         <a
-          v-for="game in recent"
+          v-for="game in recentByLastPlayed"
           :key="game.appid"
           class="feed-row"
           :href="`https://store.steampowered.com/app/${game.appid}/`"

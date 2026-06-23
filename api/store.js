@@ -11,12 +11,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing appids query parameter' })
   }
 
-  const params = new URLSearchParams()
-  params.set('appids', Array.isArray(appids) ? appids[0] : appids)
-  if (filters) params.set('filters', Array.isArray(filters) ? filters[0] : filters)
-  if (l) params.set('l', Array.isArray(l) ? l[0] : l)
-
-  const targetUrl = `${STORE_API_URL}?${params.toString()}`
+  // Build URL manually — URLSearchParams would encode commas to %2C but Steam
+  // uses literal commas as separators in both appids and filters values.
+  const rawAppids = Array.isArray(appids) ? appids[0] : appids
+  const rawFilters = Array.isArray(filters) ? filters[0] : filters
+  const rawL = Array.isArray(l) ? l[0] : l
+  const parts = [`appids=${rawAppids}`]
+  if (rawFilters) parts.push(`filters=${rawFilters}`)
+  if (rawL) parts.push(`l=${rawL}`)
+  const targetUrl = `${STORE_API_URL}?${parts.join('&')}`
 
   try {
     const response = await fetch(targetUrl)

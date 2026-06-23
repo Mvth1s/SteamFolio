@@ -1,5 +1,13 @@
+<script lang="ts">
+import { reactive } from 'vue'
+// Module-level: persists across navigations so genres aren't re-fetched on back-navigation
+const genreCache = reactive(new Map<number, string[]>())
+let genreLoadTimer: ReturnType<typeof setTimeout> | null = null
+let genreLoadGeneration = 0
+</script>
+
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getOwnedGames, getStoreGenres } from '@/services/steamApi'
 import type { LibrarySortOption, SteamOwnedGame } from '@/types/steam'
 import { sortAndFilterGames } from '@/utils/steamFormatters'
@@ -30,6 +38,13 @@ onMounted(async () => {
   }
 })
 
+onUnmounted(() => {
+  if (genreLoadTimer) {
+    clearTimeout(genreLoadTimer)
+    genreLoadTimer = null
+  }
+})
+
 function gameHeaderUrl(appId: number) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`
 }
@@ -39,18 +54,17 @@ function formatHours(minutes: number): string {
   return h > 0 ? `${h}h` : `${minutes}m`
 }
 
-// Genre lazy-loading: fetch genres in parallel batches for all visible cards
-const genreCache = reactive(new Map<number, string[]>())
-let genreLoadTimer: ReturnType<typeof setTimeout> | null = null
-
-async function loadGenresFor(appids: number[]) {
+async function loadGenresFor(appids: number[], generation: number) {
   const toLoad = appids.filter(id => !genreCache.has(id))
   const BATCH = 5
   for (let i = 0; i < toLoad.length; i += BATCH) {
+    if (generation !== genreLoadGeneration) return
     await Promise.all(toLoad.slice(i, i + BATCH).map(async appid => {
-      try {
-        genreCache.set(appid, await getStoreGenres(appid))
-      } catch { genreCache.set(appid, []) }
+      if (!genreCache.has(appid)) {
+        try {
+          genreCache.set(appid, await getStoreGenres(appid))
+        } catch { genreCache.set(appid, []) }
+      }
     }))
     if (i + BATCH < toLoad.length) await new Promise(r => setTimeout(r, 300))
   }
@@ -59,7 +73,8 @@ async function loadGenresFor(appids: number[]) {
 watch(filtered, (games) => {
   if (genreLoadTimer) clearTimeout(genreLoadTimer)
   genreLoadTimer = setTimeout(() => {
-    void loadGenresFor(games.map(g => g.appid))
+    const gen = ++genreLoadGeneration
+    void loadGenresFor(games.map(g => g.appid), gen)
   }, 300)
 }, { immediate: true })
 

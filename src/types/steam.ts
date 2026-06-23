@@ -48,6 +48,14 @@ export interface SteamBadge {
   border_color?: number
 }
 
+export interface SteamBadgeStats {
+  badges: SteamBadge[]
+  player_xp: number
+  player_level: number
+  player_xp_needed_to_level_up: number
+  player_xp_needed_current_level: number
+}
+
 export interface SteamRecentGame {
   appid: number
   name: string
@@ -62,11 +70,14 @@ export interface SteamWishlistItem {
   date_added: number
 }
 
-export interface SteamScreenshot {
-  publishedfileid: string
-  title: string
-  preview_url: string
-  app_name: string
-  time_created: number
-  creator_appid?: number
+export interface StoreGameDetails {
+  name: string
+  priceFinal: number
+  priceFormatted: string | null
+  priceOriginalFormatted: string | null
+  discountPercent: number
+  developers: string[]
+  publishers: string[]
+  releaseDate: string | null
+  comingSoon: boolean
 }
