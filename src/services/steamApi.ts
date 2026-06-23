@@ -121,6 +121,18 @@ export async function getStoreGenres(appId: number): Promise<string[]> {
   }
 }
 
+export async function getPublishedFilesCount(fileType: string): Promise<number> {
+  try {
+    const data = await fetchSteamApi<{ response?: { total?: number } }>(
+      'IPublishedFileService/GetUserFiles/v1/',
+      { appid: '0', numperpage: '1', type: fileType },
+    )
+    return data.response?.total ?? 0
+  } catch {
+    return 0
+  }
+}
+
 export async function getScreenshots(): Promise<SteamScreenshot[]> {
   const data = await fetchSteamApi<{ response?: { publishedfiledetails?: SteamScreenshot[] } }>(
     'IPublishedFileService/GetUserFiles/v1/',

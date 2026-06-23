@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSteamLevel, getOwnedGames, getFriends, getBadges, getEconomyIconUrls } from '@/services/steamApi'
-import type { SteamBadge, SteamBadgeStats } from '@/types/steam'
+import { getSteamLevel, getOwnedGames, getFriends, getBadges, getEconomyIconUrls, getRecentlyPlayedGames, getPublishedFilesCount, getStoreGenres } from '@/services/steamApi'
+import type { SteamBadge, SteamBadgeStats, SteamRecentGame } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { formatUnixDate, getStatusLabel } from '@/utils/steamFormatters'
@@ -16,6 +16,10 @@ const allGames = ref<SteamOwnedGame[]>([])
 const friendsCount = ref<number | null>(null)
 const badges = ref<SteamBadge[]>([])
 const badgeXpStats = ref<Omit<SteamBadgeStats, 'badges'> | null>(null)
+const recentGames = ref<SteamRecentGame[]>([])
+const workshopCount = ref<number | null>(null)
+const screenshotCount = ref<number | null>(null)
+const uniqueGenreCount = ref<number | null>(null)
 const badgeIconHashes = reactive(new Map<string, string>())
 const failedBadgeImages = reactive(new Set<string>())
 
@@ -27,17 +31,19 @@ const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s +
 const showcaseGames = computed(() => [...allGames.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5))
 
 const playedGames = computed(() => allGames.value.filter(g => g.playtime_forever > 0))
+const twoWeekHrs = computed(() => recentGames.value.reduce((s, g) => s + g.playtime_2weeks, 0) / 60)
 const avgSessionHrs = computed(() => {
+  if (recentGames.value.length > 0) {
+    return `${(twoWeekHrs.value / recentGames.value.length).toFixed(1)} hrs`
+  }
   if (playedGames.value.length === 0 || totalHours.value === 0) return '—'
-  const hrs = totalHours.value / (playedGames.value.length * 15)
-  return `${Math.min(hrs, 8).toFixed(1)} hrs`
+  return `${Math.min(totalHours.value / (playedGames.value.length * 15), 8).toFixed(1)} hrs`
 })
 const bestWeekHrs = computed(() => {
+  if (recentGames.value.length > 0) return `${Math.round(twoWeekHrs.value / 2)} hrs`
   if (totalHours.value === 0) return '—'
   return `${Math.round(totalHours.value / 52 * 1.5)} hrs`
 })
-const reviewsEst = computed(() => Math.max(1, Math.round(playedGames.value.filter(g => g.playtime_forever > 30 * 60).length * 0.06)))
-const workshopEst = computed(() => Math.max(0, Math.round(allGames.value.length * 0.03)))
 
 
 function countryFlag(code: string): string {
@@ -100,11 +106,14 @@ function handleBadgeImgError(event: Event, badge: SteamBadge) {
 }
 
 onMounted(async () => {
-  const [lvl, games, friends, bdgs] = await Promise.allSettled([
+  const [lvl, games, friends, bdgs, recent, workshop, screenshots] = await Promise.allSettled([
     getSteamLevel(),
     getOwnedGames(),
     getFriends(),
     getBadges(),
+    getRecentlyPlayedGames(),
+    getPublishedFilesCount('0'),
+    getPublishedFilesCount('5'),
   ])
   if (lvl.status === 'fulfilled') steamLevel.value = lvl.value
   if (games.status === 'fulfilled') allGames.value = games.value
@@ -113,7 +122,6 @@ onMounted(async () => {
     const { badges: bdgList, ...xpStats } = bdgs.value
     badgeXpStats.value = xpStats
     badges.value = [...bdgList].sort((a, b) => b.xp - a.xp).slice(0, 8)
-    // Background: fetch economy image URLs for game badges via GetAssetClassInfo (no publisher key needed)
     const classids = [...new Set(badges.value.filter(b => b.communityitemid).map(b => b.communityitemid!))]
     getEconomyIconUrls(classids).then(urls => {
       for (const badge of badges.value) {
@@ -122,6 +130,17 @@ onMounted(async () => {
         }
       }
     }).catch(() => {})
+  }
+  if (recent.status === 'fulfilled') recentGames.value = recent.value
+  if (workshop.status === 'fulfilled') workshopCount.value = workshop.value
+  if (screenshots.status === 'fulfilled') screenshotCount.value = screenshots.value
+
+  // Background: count unique genres from top 10 most-played games
+  if (games.status === 'fulfilled' && games.value.length) {
+    const top10 = [...games.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 10)
+    Promise.all(top10.map(g => getStoreGenres(g.appid)))
+      .then(results => { uniqueGenreCount.value = new Set(results.flat()).size })
+      .catch(() => {})
   }
 })
 </script>
@@ -280,9 +299,9 @@ onMounted(async () => {
                 [t('profile.joined'), player.timecreated ? formatUnixDate(player.timecreated) : 'Unknown'],
                 [t('profile.avgSession'), avgSessionHrs],
                 [t('profile.bestWeek'), bestWeekHrs],
-                [t('profile.genres'), allGames.length ? '8 genres' : '…'],
-                [t('profile.reviews'), allGames.length ? String(reviewsEst) : '…'],
-                [t('profile.workshop'), allGames.length ? String(workshopEst) : '…'],
+                [t('profile.genres'), uniqueGenreCount !== null ? `${uniqueGenreCount} genres` : allGames.length ? '…' : '—'],
+                [t('profile.screenshots'), screenshotCount !== null ? String(screenshotCount) : '…'],
+                [t('profile.workshop'), workshopCount !== null ? String(workshopCount) : '…'],
               ] as [string, string][])"
               :key="label"
               class="spread"
