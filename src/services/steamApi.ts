@@ -105,7 +105,7 @@ interface RawStoreData {
 export async function getStoreDetail(appId: number): Promise<StoreGameDetails | null> {
   const params = new URLSearchParams({
     appids: String(appId),
-    filters: 'name,price_overview,developers,publishers,release_date',
+    filters: 'basic,price_overview,developers,publishers,release_date',
   })
   const url = `/api/store?${params}`
   const backoffs = [10000, 20000, 40000]
