@@ -101,34 +101,42 @@ interface RawStoreData {
   release_date?: { coming_soon: boolean; date: string }
 }
 
-// Steam appdetails only accepts one appid at a time
+// Steam appdetails only accepts one appid at a time; retries on 429 with backoff
 export async function getStoreDetail(appId: number): Promise<StoreGameDetails | null> {
-  try {
-    const params = new URLSearchParams({
-      appids: String(appId),
-      filters: 'name,price_overview,developers,publishers,release_date',
-    })
-    const res = await fetch(`/api/store?${params}`)
-    if (!res.ok) return null
-    const data = await res.json() as Record<string, { success: boolean; data?: RawStoreData }>
-    const entry = data[String(appId)]
-    if (!entry?.success || !entry.data) return null
-    const d = entry.data
-    const disc = d.price_overview?.discount_percent ?? 0
-    return {
-      name: d.name ?? '',
-      priceFinal: d.price_overview?.final ?? 0,
-      priceFormatted: d.price_overview?.final_formatted ?? null,
-      priceOriginalFormatted: disc > 0 ? (d.price_overview?.initial_formatted ?? null) : null,
-      discountPercent: disc,
-      developers: d.developers ?? [],
-      publishers: d.publishers ?? [],
-      releaseDate: d.release_date?.date ?? null,
-      comingSoon: d.release_date?.coming_soon ?? false,
+  const params = new URLSearchParams({
+    appids: String(appId),
+    filters: 'name,price_overview,developers,publishers,release_date',
+  })
+  const url = `/api/store?${params}`
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (res.status === 429) {
+        await new Promise(r => setTimeout(r, 2000 * (attempt + 1)))
+        continue
+      }
+      if (!res.ok) return null
+      const data = await res.json() as Record<string, { success: boolean; data?: RawStoreData }>
+      const entry = data[String(appId)]
+      if (!entry?.success || !entry.data) return null
+      const d = entry.data
+      const disc = d.price_overview?.discount_percent ?? 0
+      return {
+        name: d.name ?? '',
+        priceFinal: d.price_overview?.final ?? 0,
+        priceFormatted: d.price_overview?.final_formatted ?? null,
+        priceOriginalFormatted: disc > 0 ? (d.price_overview?.initial_formatted ?? null) : null,
+        discountPercent: disc,
+        developers: d.developers ?? [],
+        publishers: d.publishers ?? [],
+        releaseDate: d.release_date?.date ?? null,
+        comingSoon: d.release_date?.coming_soon ?? false,
+      }
+    } catch {
+      return null
     }
-  } catch {
-    return null
   }
+  return null
 }
 
 export async function getWishlist(): Promise<SteamWishlistItem[]> {

@@ -164,7 +164,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'wishlist.comingSoon': 'Coming soon',
     'wishlist.added': 'Added',
     'wishlist.released': 'Released',
-    'wishlist.noPrice': 'N/A',
+    'wishlist.noPrice': 'Price unavailable',
 
     // search palette
     'search.title': 'Global Search',
@@ -348,7 +348,7 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'wishlist.comingSoon': 'À venir',
     'wishlist.added': 'Ajouté',
     'wishlist.released': 'Sorti le',
-    'wishlist.noPrice': 'N/D',
+    'wishlist.noPrice': 'Prix indisponible',
 
     'search.title': 'Recherche globale',
     'search.placeholder': 'rechercher jeux, genres, studios…',

@@ -19,7 +19,7 @@ const error = ref('')
 const sort = ref<SortKey>('date-desc')
 
 const STORE_BASE = 'https://store.steampowered.com/app'
-const CONCURRENCY = 8
+const CONCURRENCY = 3
 
 const SORTS: { key: SortKey; labelKey: string }[] = [
   { key: 'date-desc',     labelKey: 'wishlist.sortDate' },
@@ -32,8 +32,21 @@ function headerUrl(appid: number) {
   return `https://cdn.akamai.steamstatic.com/steam/apps/${appid}/header.jpg`
 }
 
+const DATE_FMT: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' }
+
 function formatDate(ts: number): string {
-  return new Date(ts * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  return new Date(ts * 1000).toLocaleDateString(undefined, DATE_FMT)
+}
+
+// Steam returns release dates as "15 Jan, 2014" (English strings) — parse and reformat
+// in browser locale so both dates look uniform. Falls back to raw string if unparseable.
+function formatReleaseDate(dateStr: string): string {
+  const m = dateStr.match(/^(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})$/)
+  if (m) {
+    const d = new Date(`${m[2]} ${m[1]}, ${m[3]}`)
+    if (!isNaN(d.getTime())) return d.toLocaleDateString(undefined, DATE_FMT)
+  }
+  return dateStr
 }
 
 function toggleSort(key: SortKey) {
@@ -195,8 +208,8 @@ onMounted(async () => {
                       {{ storeDetails.get(item.appid)!.priceFormatted }}
                     </span>
                   </template>
-                  <span v-else style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--good)">
-                    {{ t('wishlist.free') }}
+                  <span v-else style="font-family:var(--mono);font-size:11px;color:var(--text-mute)">
+                    {{ t('wishlist.noPrice') }}
                   </span>
                 </template>
                 <span v-else style="font-family:var(--mono);font-size:11px;color:var(--text-mute)">…</span>
@@ -216,7 +229,7 @@ onMounted(async () => {
                 >
                   <span style="color:var(--text-dim)">{{ t('wishlist.released') }}</span>
                   <span v-if="storeDetails.get(item.appid)!.comingSoon" style="color:var(--xp)"> {{ t('wishlist.comingSoon') }}</span>
-                  <span v-else> {{ storeDetails.get(item.appid)!.releaseDate }}</span>
+                  <span v-else> {{ formatReleaseDate(storeDetails.get(item.appid)!.releaseDate!) }}</span>
                 </div>
                 <div
                   v-if="item.date_added"
