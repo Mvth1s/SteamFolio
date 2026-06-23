@@ -10,7 +10,6 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'nav.achievements': 'Achievements',
     'nav.friends': 'Friends',
     'nav.wishlist': 'Wishlist',
-    'nav.reviews': 'Reviews',
     'nav.menu': 'MENU',
     'nav.quick': 'QUICK',
 
@@ -21,7 +20,6 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'crumb.trophies': 'TROPHIES',
     'crumb.social': 'SOCIAL',
     'crumb.wishlist': 'WISHLIST',
-    'crumb.reviews': 'REVIEWS',
 
     // common
     'common.search': 'search games, friends, achievements…',
@@ -159,11 +157,6 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'wishlist.empty': 'Your wishlist is empty.',
     'wishlist.store': 'STORE ↗',
 
-    // reviews
-    'reviews.hint': 'Games you\'ve played, sorted by playtime. Click REVIEW to write or update a review on Steam.',
-    'reviews.empty': 'No reviewable games yet.',
-    'reviews.review': 'REVIEW ↗',
-
     // search palette
     'search.title': 'Global Search',
     'search.placeholder': 'search games, genres, studios…',
@@ -200,7 +193,6 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'nav.achievements': 'Succès',
     'nav.friends': 'Amis',
     'nav.wishlist': 'Liste de souhaits',
-    'nav.reviews': 'Évaluations',
     'nav.menu': 'MENU',
     'nav.quick': 'RAPIDE',
 
@@ -210,7 +202,6 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'crumb.trophies': 'TROPHÉES',
     'crumb.social': 'SOCIAL',
     'crumb.wishlist': 'LISTE DE SOUHAITS',
-    'crumb.reviews': 'ÉVALUATIONS',
 
     'common.search': 'rechercher jeux, amis, succès…',
     'common.online': 'En ligne',
@@ -340,11 +331,6 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'wishlist.loading': 'Chargement de la liste de souhaits…',
     'wishlist.empty': 'Votre liste de souhaits est vide.',
     'wishlist.store': 'BOUTIQUE ↗',
-
-    // évaluations
-    'reviews.hint': 'Jeux déjà joués, triés par temps de jeu. Cliquez sur ÉVALUER pour rédiger ou mettre à jour une évaluation sur Steam.',
-    'reviews.empty': 'Aucun jeu évaluable pour l\'instant.',
-    'reviews.review': 'ÉVALUER ↗',
 
     'search.title': 'Recherche globale',
     'search.placeholder': 'rechercher jeux, genres, studios…',
