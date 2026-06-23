@@ -134,7 +134,7 @@ async function loadAllDetails(appIds: number[]) {
   let idx = 0
   async function worker() {
     while (idx < toFetch.length) {
-      const appId = toFetch[idx++]
+      const appId = toFetch[idx++]!
       const wait = claimSlot()
       if (wait > 0) await new Promise(r => setTimeout(r, wait))
       const detail = await getStoreDetail(appId)
