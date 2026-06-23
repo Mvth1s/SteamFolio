@@ -94,7 +94,12 @@ const topGames = computed(() => [...games.value].sort((a, b) => b.playtime_forev
 const top3Tab = ref<'month' | 'year' | 'alltime'>('alltime')
 const top3Games = computed(() => {
   if (top3Tab.value === 'alltime') return topGames.value
-  return recent.value.slice(0, 3).map(r => games.value.find(g => g.appid === r.appid) ?? { appid: r.appid, name: r.name, playtime_forever: r.playtime_forever })
+  const nowSec = Date.now() / 1000
+  const cutoff = top3Tab.value === 'month' ? nowSec - 30 * 86400 : nowSec - 365 * 86400
+  return [...games.value]
+    .filter(g => g.rtime_last_played && g.rtime_last_played >= cutoff)
+    .sort((a, b) => b.playtime_forever - a.playtime_forever)
+    .slice(0, 3)
 })
 
 const nowMs = ref(Date.now())
@@ -359,7 +364,8 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         </div>
       </div>
       <div v-if="loading" style="padding:40px;text-align:center;color:var(--text-mute)">{{ t('common.loading') }}</div>
-      <div v-else-if="top3Games.length" class="top3-grid">
+      <div v-else-if="!top3Games.length" style="padding:40px;text-align:center;color:var(--text-mute);font-family:var(--pixel);font-size:9px">{{ t('lib.noMatch') }}</div>
+      <div v-else class="top3-grid">
         <a
           v-for="(game, i) in top3Games"
           :key="game.appid"
