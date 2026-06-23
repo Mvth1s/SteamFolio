@@ -20,6 +20,15 @@ const sort = ref<SortKey>('date-desc')
 
 const STORE_BASE = 'https://store.steampowered.com/app'
 const CONCURRENCY = 3
+const CACHE_KEY = 'sf:wishlist_store'
+const CACHE_TTL = 24 * 60 * 60 * 1000
+
+type CacheEntry = { d: StoreGameDetails; t: number }
+
+function readCache(): Record<string, CacheEntry> {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}') as Record<string, CacheEntry> }
+  catch { return {} }
+}
 
 const SORTS: { key: SortKey; labelKey: string }[] = [
   { key: 'date-desc',     labelKey: 'wishlist.sortDate' },
@@ -94,12 +103,33 @@ const sortedItems = computed(() => {
 })
 
 async function loadAllDetails(appIds: number[]) {
+  const cache = readCache()
+  const now = Date.now()
+
+  // Populate from cache immediately — makes return visits instant
+  for (const id of appIds) {
+    const entry = cache[id]
+    if (entry && now - entry.t < CACHE_TTL) {
+      storeDetails.set(id, entry.d)
+    }
+  }
+
+  const toFetch = appIds.filter(id => !storeDetails.has(id))
+  if (!toFetch.length) {
+    detailsLoading.value = false
+    return
+  }
+
   let idx = 0
   async function worker() {
-    while (idx < appIds.length) {
-      const appId = appIds[idx++]
+    while (idx < toFetch.length) {
+      const appId = toFetch[idx++]
       const detail = await getStoreDetail(appId)
-      if (detail) storeDetails.set(appId, detail)
+      if (detail) {
+        storeDetails.set(appId, detail)
+        cache[appId] = { d: detail, t: now }
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)) } catch {}
+      }
     }
   }
   await Promise.allSettled(Array.from({ length: CONCURRENCY }, worker))
@@ -225,17 +255,18 @@ onMounted(async () => {
               <div style="display:flex;flex-direction:column;gap:2px;margin-top:auto;padding-top:6px">
                 <div
                   v-if="storeDetails.get(item.appid)?.releaseDate"
-                  style="font-family:var(--mono);font-size:10px;color:var(--text-mute)"
+                  style="display:flex;gap:4px;font-family:var(--mono);font-size:10px;color:var(--text-mute)"
                 >
                   <span style="color:var(--text-dim)">{{ t('wishlist.released') }}</span>
-                  <span v-if="storeDetails.get(item.appid)!.comingSoon" style="color:var(--xp)"> {{ t('wishlist.comingSoon') }}</span>
-                  <span v-else> {{ formatReleaseDate(storeDetails.get(item.appid)!.releaseDate!) }}</span>
+                  <span v-if="storeDetails.get(item.appid)!.comingSoon" style="color:var(--xp)">{{ t('wishlist.comingSoon') }}</span>
+                  <span v-else>{{ formatReleaseDate(storeDetails.get(item.appid)!.releaseDate!) }}</span>
                 </div>
                 <div
                   v-if="item.date_added"
-                  style="font-family:var(--mono);font-size:10px;color:var(--text-mute)"
+                  style="display:flex;gap:4px;font-family:var(--mono);font-size:10px;color:var(--text-mute)"
                 >
-                  <span style="color:var(--text-dim)">{{ t('wishlist.added') }}</span> {{ formatDate(item.date_added) }}
+                  <span style="color:var(--text-dim)">{{ t('wishlist.added') }}</span>
+                  <span>{{ formatDate(item.date_added) }}</span>
                 </div>
               </div>
             </div>
