@@ -140,6 +140,27 @@ export async function getAchievementRarities(appId: number): Promise<Record<stri
   return Object.fromEntries((data.achievementpercentages?.achievements ?? []).map(a => [a.name, a.percent]))
 }
 
+export async function getEconomyIconUrls(classids: string[]): Promise<Record<string, string>> {
+  if (!classids.length) return {}
+  const queryParams = new URLSearchParams({
+    steamEndpoint: 'IEconomy/GetAssetClassInfo/v1/',
+    appid: '753',
+    class_count: String(classids.length),
+  })
+  classids.forEach((id, i) => queryParams.set(`classid${i}`, id))
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
+  if (!response.ok) return {}
+  const data = await response.json() as { result?: Record<string, { icon_url?: string } | null> }
+  const result: Record<string, string> = {}
+  for (const id of classids) {
+    const info = data.result?.[id]
+    if (info && typeof info === 'object' && info.icon_url) {
+      result[id] = `https://community.cloudflare.steamstatic.com/economy/image/${info.icon_url}`
+    }
+  }
+  return result
+}
+
 export async function getItemIconHashes(appId: number): Promise<Record<string, string>> {
   const queryParams = new URLSearchParams({
     appid: String(appId),

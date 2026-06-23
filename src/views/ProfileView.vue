@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSteamLevel, getOwnedGames, getFriends, getBadges, getItemIconHashes } from '@/services/steamApi'
+import { getSteamLevel, getOwnedGames, getFriends, getBadges, getEconomyIconUrls } from '@/services/steamApi'
 import type { SteamBadge, SteamBadgeStats } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
@@ -48,7 +48,7 @@ function gameHeaderUrl(appId: number) {
 function badgeGameName(badge: SteamBadge): string {
   if (!badge.appid) return ''
   const name = allGames.value.find(g => g.appid === badge.appid)?.name ?? ''
-  return name.length > 14 ? name.slice(0, 13) + '…' : name
+  return name.length > 20 ? name.slice(0, 19) + '…' : name
 }
 
 const xpPct = computed(() => {
@@ -79,9 +79,8 @@ function systemBadgeUrl(badgeid: number, level: number): string {
 
 function badgeImageUrl(badge: SteamBadge): string {
   if (badge.appid && badge.communityitemid) {
-    const iconHash = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
-    if (iconHash)
-      return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/${badge.appid}/${iconHash}.png`
+    const cached = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
+    if (cached) return cached
     return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
   }
   return systemBadgeUrl(badge.badgeid, badge.level)
@@ -107,14 +106,15 @@ onMounted(async () => {
     const { badges: bdgList, ...xpStats } = bdgs.value
     badgeXpStats.value = xpStats
     badges.value = [...bdgList].sort((a, b) => b.xp - a.xp).slice(0, 8)
-    // Background: fetch item icon hashes for each unique game that has a badge
-    const appIds = [...new Set(badges.value.filter(b => b.appid && b.communityitemid).map(b => b.appid!))]
-    Promise.all(appIds.map(async appId => {
-      const hashes = await getItemIconHashes(appId)
-      for (const [itemdefid, iconHash] of Object.entries(hashes)) {
-        badgeIconHashes.set(`${appId}:${itemdefid}`, iconHash)
+    // Background: fetch economy image URLs for game badges via GetAssetClassInfo (no publisher key needed)
+    const classids = [...new Set(badges.value.filter(b => b.communityitemid).map(b => b.communityitemid!))]
+    getEconomyIconUrls(classids).then(urls => {
+      for (const badge of badges.value) {
+        if (badge.communityitemid && urls[badge.communityitemid]) {
+          badgeIconHashes.set(`${badge.appid}:${badge.communityitemid}`, urls[badge.communityitemid]!)
+        }
       }
-    })).catch(() => {})
+    }).catch(() => {})
   }
 })
 </script>
@@ -219,7 +219,7 @@ onMounted(async () => {
             <span class="label">{{ t('profile.badges') }}</span>
             <span class="sub">{{ badges.length ? `${badges.length} ${t('profile.earned')}` : '…' }}</span>
           </div>
-          <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+          <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
             <a
               v-for="(badge, i) in badges"
               :key="badge.badgeid"
@@ -227,24 +227,23 @@ onMounted(async () => {
               target="_blank"
               rel="noopener noreferrer"
               :style="{
-                aspectRatio: '1',
                 background: `linear-gradient(135deg,${badgeColor(i)}22,transparent)`,
-                border: `1px solid ${badgeColor(i)}55`,
+                border: `1px solid ${badgeColor(i)}44`,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                gap: '6px', overflow: 'hidden', textDecoration: 'none', padding: '8px 4px',
+                gap: '5px', overflow: 'hidden', textDecoration: 'none', padding: '10px 4px',
               }"
             >
               <img
                 :src="badgeImageUrl(badge)"
                 loading="lazy"
-                style="width:56px;height:56px;object-fit:contain;display:block;flex-shrink:0"
+                style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
                 @error="handleBadgeImgError($event)"
               />
-              <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.5;padding:0 2px" :style="{ color: badgeColor(i) }">
-                {{ badgeGameName(badge) || `#${badge.badgeid}` }}
-                <span style="color:var(--text-mute);display:block;margin-top:2px">{{ t('common.lvl') }} {{ badge.level }} · {{ badge.xp }}XP</span>
+              <div style="font-family:var(--pixel);font-size:7px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 3px;width:100%;overflow:hidden" :style="{ color: badgeColor(i) }">
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ badgeGameName(badge) || `#${badge.badgeid}` }}</div>
+                <div style="color:var(--text-mute);margin-top:2px;font-size:7px">{{ badge.xp }} XP</div>
               </div>
             </a>
             <div
