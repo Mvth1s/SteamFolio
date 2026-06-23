@@ -29,7 +29,7 @@ onMounted(async () => {
   if (g.status === 'fulfilled') games.value = g.value
   if (f.status === 'fulfilled') friendsCount.value = f.value.length
   if (r.status === 'fulfilled') recent.value = r.value
-  if (b.status === 'fulfilled') badges.value = b.value
+  if (b.status === 'fulfilled') badges.value = b.value.badges
   loading.value = false
 
   // Background: find rarest unlocked achievement across up to 3 recent games

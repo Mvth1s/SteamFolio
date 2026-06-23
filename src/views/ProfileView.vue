@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getSteamLevel, getOwnedGames, getFriends, getBadges, getItemIconHashes } from '@/services/steamApi'
-import type { SteamBadge } from '@/types/steam'
+import { getSteamLevel, getOwnedGames, getFriends, getBadges, getEconomyIconUrls, getRecentlyPlayedGames, getStoreGenres } from '@/services/steamApi'
+import type { SteamBadge, SteamBadgeStats, SteamRecentGame } from '@/types/steam'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useI18n } from '@/composables/useI18n'
 import { formatUnixDate, getStatusLabel } from '@/utils/steamFormatters'
@@ -15,23 +15,33 @@ const steamLevel = ref<number | null>(null)
 const allGames = ref<SteamOwnedGame[]>([])
 const friendsCount = ref<number | null>(null)
 const badges = ref<SteamBadge[]>([])
+const badgeXpStats = ref<Omit<SteamBadgeStats, 'badges'> | null>(null)
+const recentGames = ref<SteamRecentGame[]>([])
+const uniqueGenreCount = ref<number | null>(null)
 const badgeIconHashes = reactive(new Map<string, string>())
+const failedBadgeImages = reactive(new Set<string>())
+
+function badgeKey(badge: SteamBadge): string {
+  return `${badge.badgeid}_${badge.appid ?? 0}_${badge.communityitemid ?? ''}`
+}
 
 const totalHours = computed(() => Math.floor(allGames.value.reduce((s, g) => s + g.playtime_forever, 0) / 60))
 const showcaseGames = computed(() => [...allGames.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 5))
 
 const playedGames = computed(() => allGames.value.filter(g => g.playtime_forever > 0))
+const twoWeekHrs = computed(() => recentGames.value.reduce((s, g) => s + g.playtime_2weeks, 0) / 60)
 const avgSessionHrs = computed(() => {
+  if (recentGames.value.length > 0) {
+    return `${(twoWeekHrs.value / recentGames.value.length).toFixed(1)} hrs`
+  }
   if (playedGames.value.length === 0 || totalHours.value === 0) return '—'
-  const hrs = totalHours.value / (playedGames.value.length * 15)
-  return `${Math.min(hrs, 8).toFixed(1)} hrs`
+  return `${Math.min(totalHours.value / (playedGames.value.length * 15), 8).toFixed(1)} hrs`
 })
 const bestWeekHrs = computed(() => {
+  if (recentGames.value.length > 0) return `${Math.round(twoWeekHrs.value / 2)} hrs`
   if (totalHours.value === 0) return '—'
   return `${Math.round(totalHours.value / 52 * 1.5)} hrs`
 })
-const reviewsEst = computed(() => Math.max(1, Math.round(playedGames.value.filter(g => g.playtime_forever > 30 * 60).length * 0.06)))
-const workshopEst = computed(() => Math.max(0, Math.round(allGames.value.length * 0.03)))
 
 
 function countryFlag(code: string): string {
@@ -47,47 +57,84 @@ function gameHeaderUrl(appId: number) {
 function badgeGameName(badge: SteamBadge): string {
   if (!badge.appid) return ''
   const name = allGames.value.find(g => g.appid === badge.appid)?.name ?? ''
-  return name.length > 14 ? name.slice(0, 13) + '…' : name
+  return name.length > 20 ? name.slice(0, 19) + '…' : name
 }
+
+const xpPct = computed(() => {
+  const s = badgeXpStats.value
+  if (!s) return 0
+  const progress = s.player_xp - s.player_xp_needed_current_level
+  const span = progress + s.player_xp_needed_to_level_up
+  return span > 0 ? Math.round((progress / span) * 100) : 0
+})
 
 const BADGE_COLORS = ['var(--accent)', 'var(--xp)', 'var(--rare)', 'var(--good)']
 function badgeColor(i: number) { return BADGE_COLORS[i % 4]! }
 
-function badgeImageUrl(badge: SteamBadge): string {
-  if (badge.appid && badge.communityitemid) {
-    const iconHash = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
-    if (iconHash)
-      return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/items/${badge.appid}/${iconHash}.png`
+const BADGE_CDN = 'https://community.fastly.steamstatic.com/public/images/badges'
+
+function systemBadgeUrl(badgeid: number, level: number): string {
+  const lv = String(level).padStart(2, '0')
+  switch (badgeid) {
+    // Folder names ≠ badgeids — all mappings verified against live profile URLs
+    case 1:  return `${BADGE_CDN}/02_years/steamyears${level}_80.png`
+    case 2:  return `${BADGE_CDN}/01_community/community${lv}_80.png`
+    case 13: return `${BADGE_CDN}/13_gamecollector/${level}_80.png`
+    case 21: return `${BADGE_CDN}/21_auction/scrapper_80.png`
+    case 66: return `${BADGE_CDN}/generic/Replay2022_80.png`
+    case 67: return `${BADGE_CDN}/67_steamawardnominations/level_${lv}.png`
+    case 69: return `${BADGE_CDN}/generic/YIR2023_80.png`
+    default: return `${BADGE_CDN}/${badgeid}/${level}.png`
   }
-  return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/badges/${badge.badgeid}/${badge.level}.png`
 }
 
-function handleBadgeImgError(event: Event) {
-  const img = event.target as HTMLImageElement
-  img.onerror = null
-  img.style.display = 'none'
+function badgeImageUrl(badge: SteamBadge): string {
+  if (badge.appid && badge.communityitemid) {
+    const cached = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
+    if (cached) return cached
+    // Game badge image hash only accessible via GetItemDefs (publisher key, 403)
+    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
+  }
+  return systemBadgeUrl(badge.badgeid, badge.level)
+}
+
+function handleBadgeImgError(event: Event, badge: SteamBadge) {
+  ;(event.target as HTMLImageElement).onerror = null
+  failedBadgeImages.add(badgeKey(badge))
 }
 
 onMounted(async () => {
-  const [lvl, games, friends, bdgs] = await Promise.allSettled([
+  const [lvl, games, friends, bdgs, recent] = await Promise.allSettled([
     getSteamLevel(),
     getOwnedGames(),
     getFriends(),
     getBadges(),
+    getRecentlyPlayedGames(),
   ])
   if (lvl.status === 'fulfilled') steamLevel.value = lvl.value
   if (games.status === 'fulfilled') allGames.value = games.value
   if (friends.status === 'fulfilled') friendsCount.value = friends.value.length
   if (bdgs.status === 'fulfilled') {
-    badges.value = [...bdgs.value].sort((a, b) => b.xp - a.xp).slice(0, 8)
-    // Background: fetch item icon hashes for each unique game that has a badge
-    const appIds = [...new Set(badges.value.filter(b => b.appid && b.communityitemid).map(b => b.appid!))]
-    Promise.all(appIds.map(async appId => {
-      const hashes = await getItemIconHashes(appId)
-      for (const [itemdefid, iconHash] of Object.entries(hashes)) {
-        badgeIconHashes.set(`${appId}:${itemdefid}`, iconHash)
+    const { badges: bdgList, ...xpStats } = bdgs.value
+    badgeXpStats.value = xpStats
+    badges.value = [...bdgList].sort((a, b) => b.xp - a.xp).slice(0, 8)
+    const classids = [...new Set(badges.value.filter(b => b.communityitemid).map(b => b.communityitemid!))]
+    getEconomyIconUrls(classids).then(urls => {
+      for (const badge of badges.value) {
+        if (badge.communityitemid && urls[badge.communityitemid]) {
+          badgeIconHashes.set(`${badge.appid}:${badge.communityitemid}`, urls[badge.communityitemid]!)
+        }
       }
-    })).catch(() => {})
+    }).catch(() => {})
+  }
+  if (recent.status === 'fulfilled') recentGames.value = recent.value
+
+  // Background: count unique genres from top 10 most-played games
+  if (games.status === 'fulfilled' && games.value.length) {
+    const top10 = [...games.value].sort((a, b) => b.playtime_forever - a.playtime_forever).slice(0, 10)
+    Promise.all(top10.map(g => getStoreGenres(g.appid)))
+      .then(results => { uniqueGenreCount.value = new Set(results.flat()).size })
+      .catch(() => {})
   }
 })
 </script>
@@ -129,10 +176,10 @@ onMounted(async () => {
                 {{ t('common.lvl') }} {{ steamLevel }}
               </span>
               <span style="font-family:var(--mono);font-size:11px;color:var(--text-mute)">
-                → {{ t('common.lvl') }} {{ steamLevel + 1 }}
+                {{ badgeXpStats ? `${(badgeXpStats.player_xp - badgeXpStats.player_xp_needed_current_level).toLocaleString()} / ${(badgeXpStats.player_xp - badgeXpStats.player_xp_needed_current_level + badgeXpStats.player_xp_needed_to_level_up).toLocaleString()} XP` : '' }} → {{ t('common.lvl') }} {{ steamLevel + 1 }}
               </span>
             </div>
-            <div class="pbar xp"><i style="width:68%" /></div>
+            <div class="pbar xp"><i :style="{ width: `${xpPct}%` }" /></div>
           </div>
 
           <div class="quick-stats">
@@ -192,7 +239,7 @@ onMounted(async () => {
             <span class="label">{{ t('profile.badges') }}</span>
             <span class="sub">{{ badges.length ? `${badges.length} ${t('profile.earned')}` : '…' }}</span>
           </div>
-          <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+          <div style="padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
             <a
               v-for="(badge, i) in badges"
               :key="badge.badgeid"
@@ -200,24 +247,30 @@ onMounted(async () => {
               target="_blank"
               rel="noopener noreferrer"
               :style="{
-                aspectRatio: '1',
                 background: `linear-gradient(135deg,${badgeColor(i)}22,transparent)`,
-                border: `1px solid ${badgeColor(i)}55`,
+                border: `1px solid ${badgeColor(i)}44`,
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                gap: '6px', overflow: 'hidden', textDecoration: 'none', padding: '8px 4px',
+                gap: '5px', overflow: 'hidden', textDecoration: 'none', padding: '10px 4px',
               }"
             >
               <img
+                v-if="!failedBadgeImages.has(badgeKey(badge))"
                 :src="badgeImageUrl(badge)"
                 loading="lazy"
-                style="width:56px;height:56px;object-fit:contain;display:block;flex-shrink:0"
+                style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
-                @error="handleBadgeImgError($event)"
+                @error="handleBadgeImgError($event, badge)"
               />
-              <div style="font-family:var(--pixel);font-size:5px;letter-spacing:0.5px;text-align:center;line-height:1.5;padding:0 2px" :style="{ color: badgeColor(i) }">
-                {{ badgeGameName(badge) || `#${badge.badgeid}` }}
-                <span style="color:var(--text-mute);display:block;margin-top:2px">{{ t('common.lvl') }} {{ badge.level }} · {{ badge.xp }}XP</span>
+              <div
+                v-else
+                style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0.35"
+              >
+                <PixelIcon kind="star" :size="32" :color="badgeColor(i)" />
+              </div>
+              <div style="font-family:var(--pixel);font-size:7px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 3px;width:100%;overflow:hidden" :style="{ color: badgeColor(i) }">
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ badgeGameName(badge) || `#${badge.badgeid}` }}</div>
+                <div style="color:var(--text-mute);margin-top:2px;font-size:7px">{{ badge.xp }} XP</div>
               </div>
             </a>
             <div
@@ -240,9 +293,7 @@ onMounted(async () => {
                 [t('profile.joined'), player.timecreated ? formatUnixDate(player.timecreated) : 'Unknown'],
                 [t('profile.avgSession'), avgSessionHrs],
                 [t('profile.bestWeek'), bestWeekHrs],
-                [t('profile.genres'), allGames.length ? '8 genres' : '…'],
-                [t('profile.reviews'), allGames.length ? String(reviewsEst) : '…'],
-                [t('profile.workshop'), allGames.length ? String(workshopEst) : '…'],
+                [t('profile.genres'), uniqueGenreCount !== null ? `${uniqueGenreCount} genres` : allGames.length ? '…' : '—'],
               ] as [string, string][])"
               :key="label"
               class="spread"

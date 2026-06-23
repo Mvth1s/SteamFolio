@@ -1,4 +1,4 @@
-import type { SteamAchievement, SteamBadge, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamScreenshot, SteamWishlistItem } from '@/types/steam'
+import type { SteamAchievement, SteamBadgeStats, SteamFriend, SteamOwnedGame, SteamPlayer, SteamRecentGame, SteamWishlistItem, StoreGameDetails } from '@/types/steam'
 
 const steamId = import.meta.env.VITE_STEAM_ID
 
@@ -93,14 +93,68 @@ export async function getRecentlyPlayedGames(): Promise<SteamRecentGame[]> {
   return data.response.games ?? []
 }
 
+interface RawStoreData {
+  name?: string
+  price_overview?: { final: number; final_formatted: string; initial_formatted?: string; discount_percent: number }
+  developers?: string[]
+  publishers?: string[]
+  release_date?: { coming_soon: boolean; date: string }
+}
+
+// Steam appdetails only accepts one appid at a time; retries on 429 with long backoff
+export async function getStoreDetail(appId: number): Promise<StoreGameDetails | null> {
+  const params = new URLSearchParams({
+    appids: String(appId),
+    filters: 'basic,price_overview,developers,publishers,release_date',
+  })
+  const url = `/api/store?${params}`
+  const backoffs = [10000, 20000, 40000]
+  for (let attempt = 0; attempt <= backoffs.length; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (res.status === 429) {
+        const delay = backoffs[attempt]
+        if (delay) await new Promise(r => setTimeout(r, delay))
+        continue
+      }
+      if (!res.ok) return null
+      const data = await res.json() as Record<string, { success: boolean; data?: RawStoreData }>
+      const entry = data[String(appId)]
+      if (!entry?.success || !entry.data) return null
+      const d = entry.data
+      const disc = d.price_overview?.discount_percent ?? 0
+      return {
+        name: d.name ?? '',
+        priceFinal: d.price_overview?.final ?? 0,
+        priceFormatted: d.price_overview?.final_formatted ?? null,
+        priceOriginalFormatted: disc > 0 ? (d.price_overview?.initial_formatted ?? null) : null,
+        discountPercent: disc,
+        developers: d.developers ?? [],
+        publishers: d.publishers ?? [],
+        releaseDate: d.release_date?.date ?? null,
+        comingSoon: d.release_date?.coming_soon ?? false,
+      }
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 export async function getWishlist(): Promise<SteamWishlistItem[]> {
   const data = await fetchSteamApi<{ response: { items?: SteamWishlistItem[] } }>('IWishlistService/GetWishlist/v1/')
   return data.response.items ?? []
 }
 
-export async function getBadges(): Promise<SteamBadge[]> {
-  const data = await fetchSteamApi<{ response: { badges?: SteamBadge[] } }>('IPlayerService/GetBadges/v1/')
-  return data.response.badges ?? []
+export async function getBadges(): Promise<SteamBadgeStats> {
+  const data = await fetchSteamApi<{ response: Partial<SteamBadgeStats> }>('IPlayerService/GetBadges/v1/')
+  return {
+    badges: data.response.badges ?? [],
+    player_xp: data.response.player_xp ?? 0,
+    player_level: data.response.player_level ?? 0,
+    player_xp_needed_to_level_up: data.response.player_xp_needed_to_level_up ?? 0,
+    player_xp_needed_current_level: data.response.player_xp_needed_current_level ?? 0,
+  }
 }
 
 export async function getStoreGenres(appId: number): Promise<string[]> {
@@ -115,14 +169,6 @@ export async function getStoreGenres(appId: number): Promise<string[]> {
   }
 }
 
-export async function getScreenshots(): Promise<SteamScreenshot[]> {
-  const data = await fetchSteamApi<{ response?: { publishedfiledetails?: SteamScreenshot[] } }>(
-    'IPublishedFileService/GetUserFiles/v1/',
-    { type: '5', appid: '0', numperpage: '100', return_short_description: '1' },
-  )
-  return data.response?.publishedfiledetails ?? []
-}
-
 export async function getAchievementRarities(appId: number): Promise<Record<string, number>> {
   const queryParams = new URLSearchParams({
     gameid: String(appId),
@@ -132,6 +178,27 @@ export async function getAchievementRarities(appId: number): Promise<Record<stri
   if (!response.ok) return {}
   const data = (await response.json()) as { achievementpercentages?: { achievements: { name: string; percent: number }[] } }
   return Object.fromEntries((data.achievementpercentages?.achievements ?? []).map(a => [a.name, a.percent]))
+}
+
+export async function getEconomyIconUrls(classids: string[]): Promise<Record<string, string>> {
+  if (!classids.length) return {}
+  const queryParams = new URLSearchParams({
+    steamEndpoint: 'IEconomy/GetAssetClassInfo/v1/',
+    appid: '753',
+    class_count: String(classids.length),
+  })
+  classids.forEach((id, i) => queryParams.set(`classid${i}`, id))
+  const response = await fetch(`/api/steam?${queryParams.toString()}`)
+  if (!response.ok) return {}
+  const data = await response.json() as { result?: Record<string, { icon_url?: string } | null> }
+  const result: Record<string, string> = {}
+  for (const id of classids) {
+    const info = data.result?.[id]
+    if (info && typeof info === 'object' && info.icon_url) {
+      result[id] = `https://community.cloudflare.steamstatic.com/economy/image/${info.icon_url}`
+    }
+  }
+  return result
 }
 
 export async function getItemIconHashes(appId: number): Promise<Record<string, string>> {
