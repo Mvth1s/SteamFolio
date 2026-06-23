@@ -67,12 +67,9 @@ const BADGE_CDN = 'https://community.fastly.steamstatic.com/public/images/badges
 function systemBadgeUrl(badgeid: number, level: number): string {
   const lv = String(level).padStart(2, '0')
   switch (badgeid) {
-    case 1:  return `${BADGE_CDN}/01_community/community${lv}_80.png`
-    case 2:  return `${BADGE_CDN}/02_years/steamyears${level}_54.png`
-    case 3:  return `${BADGE_CDN}/03_together/together${lv}_80.png`
-    case 4:  return `${BADGE_CDN}/04_saleitem/saleitem${lv}_80.png`
-    case 5:  return `${BADGE_CDN}/05_cardbadge/card${lv}_80.png`
-    case 13: return `${BADGE_CDN}/13_gamecollector/${level}_80.png`
+    // Folder names ≠ badgeids — mapping verified against live profile data
+    case 1: return `${BADGE_CDN}/02_years/steamyears${level}_54.png`      // Years of Service
+    case 2: return `${BADGE_CDN}/01_community/community${lv}_80.png`      // Community Ambassador
     default: return `${BADGE_CDN}/${badgeid}/${level}.png`
   }
 }
@@ -81,15 +78,20 @@ function badgeImageUrl(badge: SteamBadge): string {
   if (badge.appid && badge.communityitemid) {
     const cached = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
     if (cached) return cached
-    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
+    // Pattern from Steam CDN: apps/{appid}/{badgeid}.png (badge artwork per game per level)
+    return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/${badge.badgeid}.png`
   }
   return systemBadgeUrl(badge.badgeid, badge.level)
 }
 
-function handleBadgeImgError(event: Event) {
+function handleBadgeImgError(event: Event, badge: SteamBadge) {
   const img = event.target as HTMLImageElement
   img.onerror = null
-  img.style.display = 'none'
+  if (badge.appid && !img.src.includes('/steam/apps/')) {
+    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
+  } else {
+    img.style.display = 'none'
+  }
 }
 
 onMounted(async () => {
@@ -239,7 +241,7 @@ onMounted(async () => {
                 loading="lazy"
                 style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
-                @error="handleBadgeImgError($event)"
+                @error="handleBadgeImgError($event, badge)"
               />
               <div style="font-family:var(--pixel);font-size:7px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 3px;width:100%;overflow:hidden" :style="{ color: badgeColor(i) }">
                 <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ badgeGameName(badge) || `#${badge.badgeid}` }}</div>
