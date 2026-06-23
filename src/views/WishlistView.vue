@@ -3,7 +3,6 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { getWishlist, getStoreDetail } from '@/services/steamApi'
 import type { SteamWishlistItem, StoreGameDetails } from '@/types/steam'
 import { useI18n } from '@/composables/useI18n'
-import PixelIcon from '@/components/shared/PixelIcon.vue'
 
 defineOptions({ name: 'WishlistView' })
 
@@ -19,7 +18,8 @@ const error = ref('')
 const sort = ref<SortKey>('date-desc')
 
 const STORE_BASE = 'https://store.steampowered.com/app'
-const REQUEST_DELAY = 600
+const INTER_REQUEST_DELAY = 300
+const CONCURRENCY = 2
 const CACHE_KEY = 'sf:wishlist_store'
 const CACHE_TTL = 24 * 60 * 60 * 1000
 
@@ -120,15 +120,33 @@ async function loadAllDetails(appIds: number[]) {
     return
   }
 
-  for (const appId of toFetch) {
-    const detail = await getStoreDetail(appId)
-    if (detail) {
-      storeDetails.set(appId, detail)
-      cache[appId] = { d: detail, t: now }
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)) } catch {}
-    }
-    await new Promise(r => setTimeout(r, REQUEST_DELAY))
+  // Shared rate gate: requests fire no faster than INTER_REQUEST_DELAY ms apart,
+  // regardless of how many workers claim slots simultaneously.
+  let nextSlot = Date.now()
+  function claimSlot(): number {
+    const t = Date.now()
+    if (nextSlot < t) nextSlot = t
+    const wait = nextSlot - t
+    nextSlot += INTER_REQUEST_DELAY
+    return wait
   }
+
+  let idx = 0
+  async function worker() {
+    while (idx < toFetch.length) {
+      const appId = toFetch[idx++]
+      const wait = claimSlot()
+      if (wait > 0) await new Promise(r => setTimeout(r, wait))
+      const detail = await getStoreDetail(appId)
+      if (detail) {
+        storeDetails.set(appId, detail)
+        cache[appId] = { d: detail, t: now }
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)) } catch {}
+      }
+    }
+  }
+
+  await Promise.allSettled(Array.from({ length: CONCURRENCY }, worker))
   detailsLoading.value = false
 }
 
@@ -167,22 +185,35 @@ onMounted(async () => {
       </div>
 
       <template v-else>
-        <!-- Sort bar -->
-        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
-          <button
-            v-for="s in SORTS"
-            :key="s.key"
-            class="sort-btn"
-            :class="{ active: isSortActive(s.key) }"
-            @click="toggleSort(s.key)"
-          >{{ t(s.labelKey) }}{{ sortArrow(s.key) }}</button>
-          <span
-            v-if="detailsLoading"
-            style="font-family:var(--pixel);font-size:7px;color:var(--text-mute);letter-spacing:1px;display:flex;align-items:center;gap:4px"
-          >
-            <PixelIcon kind="loading" :size="10" color="var(--text-mute)" />
-            {{ storeDetails.size }}/{{ items.length }}
-          </span>
+        <!-- Sort bar + progress -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+            <button
+              v-for="s in SORTS"
+              :key="s.key"
+              class="sort-btn"
+              :class="{ active: isSortActive(s.key) }"
+              @click="toggleSort(s.key)"
+            >{{ t(s.labelKey) }}{{ sortArrow(s.key) }}</button>
+          </div>
+          <div v-if="detailsLoading" style="display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span style="font-family:var(--pixel);font-size:7px;color:var(--text-mute);letter-spacing:1px">{{ t('wishlist.loading') }}</span>
+              <span style="font-family:var(--pixel);font-size:7px;color:var(--text-dim)">
+                {{ storeDetails.size }}<span style="color:var(--text-mute)">/{{ items.length }}</span>
+              </span>
+            </div>
+            <div style="height:3px;background:var(--line-soft);overflow:hidden">
+              <div
+                :style="{
+                  height: '100%',
+                  width: items.length ? `${Math.round(storeDetails.size / items.length * 100)}%` : '0%',
+                  background: 'var(--accent)',
+                  transition: 'width 250ms linear',
+                }"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Cards grid -->
