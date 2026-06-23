@@ -67,9 +67,14 @@ const BADGE_CDN = 'https://community.fastly.steamstatic.com/public/images/badges
 function systemBadgeUrl(badgeid: number, level: number): string {
   const lv = String(level).padStart(2, '0')
   switch (badgeid) {
-    // Folder names ≠ badgeids — mapping verified against live profile data
-    case 1: return `${BADGE_CDN}/02_years/steamyears${level}_54.png`      // Years of Service
-    case 2: return `${BADGE_CDN}/01_community/community${lv}_80.png`      // Community Ambassador
+    // Folder names ≠ badgeids — all mappings verified against live profile URLs
+    case 1:  return `${BADGE_CDN}/02_years/steamyears${level}_80.png`
+    case 2:  return `${BADGE_CDN}/01_community/community${lv}_80.png`
+    case 13: return `${BADGE_CDN}/13_gamecollector/${level}_80.png`
+    case 21: return `${BADGE_CDN}/21_auction/scrapper_80.png`
+    case 66: return `${BADGE_CDN}/generic/Replay2022_80.png`
+    case 67: return `${BADGE_CDN}/67_steamawardnominations/level_${lv}.png`
+    case 69: return `${BADGE_CDN}/generic/YIR2023_80.png`
     default: return `${BADGE_CDN}/${badgeid}/${level}.png`
   }
 }
@@ -78,20 +83,16 @@ function badgeImageUrl(badge: SteamBadge): string {
   if (badge.appid && badge.communityitemid) {
     const cached = badgeIconHashes.get(`${badge.appid}:${badge.communityitemid}`)
     if (cached) return cached
-    // Pattern from Steam CDN: apps/{appid}/{badgeid}.png (badge artwork per game per level)
-    return `https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/${badge.appid}/${badge.badgeid}.png`
+    // Game badge image hash only accessible via GetItemDefs (publisher key, 403)
+    return `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
   }
   return systemBadgeUrl(badge.badgeid, badge.level)
 }
 
-function handleBadgeImgError(event: Event, badge: SteamBadge) {
+function handleBadgeImgError(event: Event) {
   const img = event.target as HTMLImageElement
   img.onerror = null
-  if (badge.appid && !img.src.includes('/steam/apps/')) {
-    img.src = `https://cdn.akamai.steamstatic.com/steam/apps/${badge.appid}/header.jpg`
-  } else {
-    img.style.display = 'none'
-  }
+  img.style.display = 'none'
 }
 
 onMounted(async () => {
@@ -241,7 +242,7 @@ onMounted(async () => {
                 loading="lazy"
                 style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
-                @error="handleBadgeImgError($event, badge)"
+                @error="handleBadgeImgError($event)"
               />
               <div style="font-family:var(--pixel);font-size:7px;letter-spacing:0.5px;text-align:center;line-height:1.4;padding:0 3px;width:100%;overflow:hidden" :style="{ color: badgeColor(i) }">
                 <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ badgeGameName(badge) || `#${badge.badgeid}` }}</div>
