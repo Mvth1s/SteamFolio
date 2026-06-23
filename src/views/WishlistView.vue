@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { getWishlist, getStoreBatch } from '@/services/steamApi'
+import { getWishlist, getStoreDetail } from '@/services/steamApi'
 import type { SteamWishlistItem, StoreGameDetails } from '@/types/steam'
 import { useI18n } from '@/composables/useI18n'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
@@ -19,7 +19,7 @@ const error = ref('')
 const sort = ref<SortKey>('date-desc')
 
 const STORE_BASE = 'https://store.steampowered.com/app'
-const BATCH_SIZE = 20
+const CONCURRENCY = 8
 
 const SORTS: { key: SortKey; labelKey: string }[] = [
   { key: 'date-desc',     labelKey: 'wishlist.sortDate' },
@@ -81,18 +81,15 @@ const sortedItems = computed(() => {
 })
 
 async function loadAllDetails(appIds: number[]) {
-  const batches: number[][] = []
-  for (let i = 0; i < appIds.length; i += BATCH_SIZE) {
-    batches.push(appIds.slice(i, i + BATCH_SIZE))
+  let idx = 0
+  async function worker() {
+    while (idx < appIds.length) {
+      const appId = appIds[idx++]
+      const detail = await getStoreDetail(appId)
+      if (detail) storeDetails.set(appId, detail)
+    }
   }
-  await Promise.allSettled(
-    batches.map(async batch => {
-      const partial = await getStoreBatch(batch)
-      for (const [id, details] of partial) {
-        storeDetails.set(id, details)
-      }
-    })
-  )
+  await Promise.allSettled(Array.from({ length: CONCURRENCY }, worker))
   detailsLoading.value = false
 }
 
