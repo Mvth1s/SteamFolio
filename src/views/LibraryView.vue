@@ -100,7 +100,7 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
 <template>
   <div>
     <div class="section-h">
-      <h2>{{ t('nav.library').toUpperCase() }}</h2>
+      <h1>{{ t('nav.library').toUpperCase() }}</h1>
       <span class="meta">
         <template v-if="!loading">
           {{ games.length }} {{ t('lib.totalGames') }} · {{ totalHours.toLocaleString() }} {{ t('lib.totalHrs') }}
@@ -155,7 +155,8 @@ const SORT_OPTIONS: { value: LibrarySortOption; labelKey: string }[] = [
             <img
               :src="gameHeaderUrl(game.appid)"
               :alt="game.name"
-              loading="lazy"
+              width="460" height="215"
+              loading="lazy" decoding="async"
               style="width:100%;height:100%;object-fit:cover;display:block;"
               @error="($event.target as HTMLImageElement).style.opacity = '0'"
             />

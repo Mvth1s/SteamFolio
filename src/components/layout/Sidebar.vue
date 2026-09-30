@@ -105,6 +105,7 @@ function navigate(to: string) {
             v-if="player?.avatarfull"
             :src="player.avatarfull"
             :alt="player?.personaname"
+            width="184" height="184"
             style="width:38px;height:38px;object-fit:cover;flex-shrink:0;border:1px solid var(--line-soft)"
           />
           <div v-else style="width:38px;height:38px;background:var(--bg-panel);flex-shrink:0" />

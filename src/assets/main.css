@@ -172,6 +172,8 @@ a { color: var(--accent); text-decoration: none; }
   letter-spacing: 1px;
   margin-top: 6px;
 }
+.topbar .crumb ol { display: flex; gap: calc(1ch + 1px); margin: 0; padding: 0; list-style: none; }
+.topbar .crumb a { color: inherit; }
 .topbar .search {
   margin-left: auto;
   display: flex; align-items: center; gap: 10px;
@@ -236,6 +238,7 @@ a { color: var(--accent); text-decoration: none; }
   display: flex; align-items: baseline; gap: 14px;
   margin: 0 0 14px;
 }
+.section-h h1,
 .section-h h2 {
   font-family: var(--pixel);
   font-size: 11px;
@@ -1298,7 +1301,7 @@ a { color: var(--accent); text-decoration: none; }
 [data-theme="horror"] .pcard { box-shadow: 0 0 0 1px rgba(200,29,37,0.06) inset; }
 [data-theme="horror"] .stat-value, [data-theme="horror"] .gauge-val,
 [data-theme="horror"] .top3-hours, [data-theme="horror"] .cp-timer,
-[data-theme="horror"] h1 {
+[data-theme="horror"] .hero h1 {
   text-shadow: 0 0 4px var(--accent), 1px 1px 0 #000;
   letter-spacing: 1px;
 }
@@ -1325,7 +1328,7 @@ a { color: var(--accent); text-decoration: none; }
 [data-theme="nature"] .pcard { clip-path: none; border-radius: 4px; }
 [data-theme="nature"] .game-card { border-radius: 4px; }
 [data-theme="nature"] .brand-name { font-family: var(--pixel); letter-spacing: 1px; }
-[data-theme="nature"] h1 { font-style: italic; letter-spacing: 0; }
+[data-theme="nature"] .hero h1 { font-style: italic; letter-spacing: 0; }
 
 /* OCEAN */
 [data-theme="ocean"] body {

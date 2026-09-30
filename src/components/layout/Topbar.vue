@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import PixelIcon from '@/components/shared/PixelIcon.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useTheme, SF_THEMES } from '@/composables/useTheme'
@@ -60,7 +60,13 @@ function toggleLang() {
   <div class="topbar">
     <div>
       <div class="page-title">{{ t(pageInfo.labelKey).toUpperCase() }}</div>
-      <div class="crumb">STEAMFOLIO / {{ t(pageInfo.crumbKey) }}</div>
+      <nav class="crumb" aria-label="Breadcrumb">
+        <ol>
+          <li><RouterLink to="/">STEAMFOLIO</RouterLink></li>
+          <li aria-hidden="true">/</li>
+          <li><RouterLink :to="route.path" aria-current="page">{{ t(pageInfo.crumbKey) }}</RouterLink></li>
+        </ol>
+      </nav>
     </div>
 
     <div class="search" style="cursor:pointer" @click="emit('search')">
@@ -113,6 +119,7 @@ function toggleLang() {
         v-if="player?.avatarfull"
         :src="player.avatarfull"
         :alt="player.personaname"
+        width="184" height="184"
         style="width:32px;height:32px;object-fit:cover;flex-shrink:0;border:1px solid var(--line-soft)"
       />
       <div v-else style="width:32px;height:32px;background:var(--bg-panel);flex-shrink:0" />

@@ -66,7 +66,7 @@ onMounted(async () => {
 <template>
   <div>
     <div class="section-h">
-      <h2>{{ t('nav.friends').toUpperCase() }}</h2>
+      <h1>{{ t('nav.friends').toUpperCase() }}</h1>
       <span class="meta" v-if="!loading">
         {{ friends.length }} {{ t('friends.total') }}
         · {{ onlineCount }} {{ t('common.online').toLowerCase() }}
@@ -110,6 +110,8 @@ onMounted(async () => {
           <img
             :src="friend.avatarfull"
             :alt="friend.personaname"
+            width="184" height="184"
+            loading="lazy" decoding="async"
             class="avatar"
             style="width:56px;height:56px;border:1px solid var(--line-soft)"
           />
