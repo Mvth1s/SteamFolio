@@ -1,0 +1,22 @@
+# SteamFolio
+
+> Dashboard personnel de profil Steam, branché en direct sur l'API Steam Web. Projet portfolio de Mathis Aguado, construit en grande partie avec Claude Code.
+
+SteamFolio affiche les données publiques d'un compte Steam : profil et badges, bibliothèque de jeux, temps de jeu, succès débloqués, liste d'amis et liste de souhaits. Les appels à l'API Steam passent par une fonction serverless Vercel qui garde la clé d'API côté serveur. Stack : Vue 3, TypeScript, Vite, Tailwind CSS, déployé sur Vercel.
+
+## Pages
+
+- [Dashboard](https://steamfolio-mvtos.vercel.app/dashboard): vue d'ensemble (jeu en cours, temps de jeu récent, top jeux, badges)
+- [Profil](https://steamfolio-mvtos.vercel.app/profile): profil Steam, jeux mis en avant et badges
+- [Bibliothèque](https://steamfolio-mvtos.vercel.app/library): jeux possédés avec temps de jeu, tri et filtres
+- [Succès](https://steamfolio-mvtos.vercel.app/achievements): progression des succès par jeu
+- [Amis](https://steamfolio-mvtos.vercel.app/friends): liste d'amis Steam et leur statut
+- [Liste de souhaits](https://steamfolio-mvtos.vercel.app/wishlist): jeux de la wishlist avec prix et promotions
+
+## Auteur
+
+- Mathis Aguado
+- Portfolio : https://mathisaguado.vercel.app
+- GitHub : https://github.com/Mvth1s
+- LinkedIn : https://www.linkedin.com/in/mathis-aguado
+- Code source : https://github.com/Mvth1s/Steamfolio
