@@ -305,10 +305,33 @@ export const SF_THEMES: Record<ThemeKey, ThemeConfig> = {
   },
 }
 
+// Pixel theme fonts (+ JetBrains Mono, shared by all themes) are loaded globally in index.html;
+// the other families are only fetched when their theme is active.
+const THEME_FONT_FAMILIES: Partial<Record<ThemeKey, string>> = {
+  light:  'family=Nunito:wght@400;600;700;800',
+  horror: 'family=UnifrakturMaguntia&family=Creepster&family=Courier+Prime:wght@400;700',
+  space:  'family=Orbitron:wght@500;700&family=Exo+2:wght@400;500;600',
+  nature: 'family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700',
+  ocean:  'family=Raleway:wght@400;600;700&family=Source+Sans+3:wght@400;600',
+}
+
+function loadThemeFonts(key: ThemeKey): void {
+  const families = THEME_FONT_FAMILIES[key]
+  if (!families) return
+  const id = `sf-fonts-${key}`
+  if (document.getElementById(id)) return
+  const link = document.createElement('link')
+  link.id = id
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?${families}&display=swap`
+  document.head.appendChild(link)
+}
+
 const themeKey = ref<ThemeKey>((localStorage.getItem('sf-theme') as ThemeKey) ?? 'pixel')
 
 export function applyTheme(key: ThemeKey): void {
   const theme = SF_THEMES[key] ?? SF_THEMES.pixel
+  loadThemeFonts(theme.key)
   const root = document.documentElement
   Object.entries(theme.colors).forEach(([k, v]) => root.style.setProperty(`--${k}`, v))
   root.style.setProperty('--pixel', theme.fonts.heading)
