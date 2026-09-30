@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://steamfolio-mvtos.vercel.app/sitemap.xml

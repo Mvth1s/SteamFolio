@@ -4,10 +4,61 @@
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SteamFolio</title>
+    <title>SteamFolio | Dashboard de profil Steam par Mathis Aguado</title>
+    <meta name="description" content="Dashboard personnel branché sur l'API Steam : profil, bibliothèque de jeux, temps de jeu, succès débloqués et liste d'amis, en un coup d'œil.">
+    <link rel="canonical" href="https://steamfolio-mvtos.vercel.app/">
+    <meta name="theme-color" content="#0e1820">
+    <link rel="manifest" href="/manifest.json">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SteamFolio">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:title" content="SteamFolio | Dashboard de profil Steam par Mathis Aguado">
+    <meta property="og:description" content="Dashboard personnel branché sur l'API Steam : profil, bibliothèque de jeux, temps de jeu, succès débloqués et liste d'amis, en un coup d'œil.">
+    <meta property="og:url" content="https://steamfolio-mvtos.vercel.app/">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="SteamFolio | Dashboard de profil Steam par Mathis Aguado">
+    <meta name="twitter:description" content="Dashboard personnel branché sur l'API Steam : profil, bibliothèque de jeux, temps de jeu, succès débloqués et liste d'amis, en un coup d'œil.">
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://steamfolio-mvtos.vercel.app/#website",
+            "name": "SteamFolio",
+            "url": "https://steamfolio-mvtos.vercel.app/",
+            "inLanguage": "fr"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://steamfolio-mvtos.vercel.app/#webapp",
+            "name": "SteamFolio",
+            "applicationCategory": "EntertainmentApplication",
+            "operatingSystem": "Web",
+            "url": "https://steamfolio-mvtos.vercel.app/",
+            "description": "Dashboard personnel branché sur l'API Steam : profil, bibliothèque de jeux, temps de jeu, succès débloqués et liste d'amis.",
+            "isPartOf": { "@id": "https://steamfolio-mvtos.vercel.app/#website" },
+            "author": {
+              "@type": "Person",
+              "name": "Mathis Aguado",
+              "url": "https://mathisaguado.vercel.app",
+              "sameAs": [
+                "https://github.com/Mvth1s",
+                "https://www.linkedin.com/in/mathis-aguado"
+              ]
+            }
+          }
+        ]
+      }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700&family=Exo+2:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@400;700&family=Raleway:wght@400;600;700&family=Source+Sans+3:wght@400;600&family=Courier+Prime:wght@400;700&family=UnifrakturMaguntia&family=Creepster&display=swap" rel="stylesheet">
+    <!-- Default (pixel) theme fonts only; other themes load theirs on demand in useTheme.ts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="app"></div>

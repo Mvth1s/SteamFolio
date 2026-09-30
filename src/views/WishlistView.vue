@@ -170,7 +170,7 @@ onMounted(async () => {
 <template>
   <div>
     <div class="section-h">
-      <h2>{{ t('nav.wishlist').toUpperCase() }}</h2>
+      <h1>{{ t('nav.wishlist').toUpperCase() }}</h1>
       <span v-if="!loading" class="meta">{{ items.length }} {{ t('lib.totalGames') }}</span>
     </div>
 
@@ -232,7 +232,8 @@ onMounted(async () => {
               <img
                 :src="headerUrl(item.appid)"
                 :alt="storeDetails.get(item.appid)?.name ?? `App ${item.appid}`"
-                loading="lazy"
+                width="460" height="215"
+                loading="lazy" decoding="async"
                 style="width:100%;height:100%;object-fit:cover;display:block"
                 @error="($event.target as HTMLImageElement).style.visibility = 'hidden'"
               />

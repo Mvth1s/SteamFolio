@@ -92,7 +92,7 @@ function formatUnlockDate(ts: number): string {
 <template>
   <div>
     <div class="section-h">
-      <h2>{{ t('nav.achievements').toUpperCase() }}</h2>
+      <h1>{{ t('nav.achievements').toUpperCase() }}</h1>
       <span v-if="!loadingGames && achievements.length" class="meta">
         {{ unlocked.length }} / {{ achievements.length }} · {{ completion }}{{ t('ach.completion') }}
       </span>
@@ -170,6 +170,7 @@ function formatUnlockDate(ts: number): string {
           <img
             :src="libraryUrl(selectedGame.appid)"
             :alt="selectedGame.name"
+            width="600" height="900"
             style="width:100%;height:100%;object-fit:cover"
             @error="($event.target as HTMLImageElement).src = gameHeaderUrl(selectedGame!.appid)"
           />
@@ -192,6 +193,7 @@ function formatUnlockDate(ts: number): string {
           <img
             :src="libraryUrl(selectedGame.appid)"
             :alt="selectedGame.name"
+            width="600" height="900"
             style="width:100%;height:100%;object-fit:cover;filter:blur(6px) brightness(0.25);transform:scale(1.08)"
             @error="($event.target as HTMLImageElement).src = gameHeaderUrl(selectedGame!.appid)"
           />

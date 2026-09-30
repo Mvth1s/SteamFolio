@@ -200,7 +200,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
 <template>
   <div>
     <div class="section-h">
-      <h2>{{ t('dash.overview') }}</h2>
+      <h1>{{ t('dash.overview') }}</h1>
       <span class="meta">{{ today }}</span>
     </div>
 
@@ -255,7 +255,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
     <!-- Currently playing (LIVE) -->
     <div v-if="isLive" class="pcard cp-card">
       <div class="cp-cover">
-        <img :src="gameHeaderUrl(liveGameId ?? 0)" :alt="liveGameName" style="width:100%;height:100%;object-fit:cover" />
+        <img :src="gameHeaderUrl(liveGameId ?? 0)" :alt="liveGameName" width="460" height="215" style="width:100%;height:100%;object-fit:cover" />
         <div class="cp-badge"><span class="cp-live-dot" /> {{ t('dash.live') }}</div>
       </div>
       <div class="cp-meta">
@@ -269,7 +269,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
     <!-- Last played (when not in a game) -->
     <div v-else-if="lastPlayedGame" class="pcard cp-card">
       <div class="cp-cover">
-        <img :src="gameHeaderUrl(lastPlayedGame.appid)" :alt="lastPlayedGame.name" style="width:100%;height:100%;object-fit:cover" />
+        <img :src="gameHeaderUrl(lastPlayedGame.appid)" :alt="lastPlayedGame.name" width="460" height="215" style="width:100%;height:100%;object-fit:cover" />
         <div class="cp-badge cp-badge-paused">{{ t('dash.lastPlayed') }}</div>
       </div>
       <div class="cp-meta">
@@ -377,7 +377,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
         >
           <span class="rank-num">#{{ i + 1 }}</span>
           <div class="top3-cover" style="overflow:hidden">
-            <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" />
+            <img :src="gameHeaderUrl(game.appid)" :alt="game.name" width="460" height="215" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover" />
           </div>
           <div class="top3-name">{{ game.name }}</div>
           <div class="top3-hours">{{ Math.floor(game.playtime_forever / 60) }}<span>h</span></div>
@@ -503,6 +503,8 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
             <img
               :src="libraryUrl(game.appid)"
               :alt="game.name"
+              width="600" height="900"
+              loading="lazy" decoding="async"
               style="width:100%;height:100%;object-fit:cover"
               @error="($event.target as HTMLImageElement).src = gameHeaderUrl(game.appid)"
             />
@@ -520,7 +522,7 @@ function formatHMS(s: number) { const h = Math.floor(s / 3600), m = Math.floor((
 
     <!-- Player quick glance -->
     <div v-if="player" class="pcard" style="padding:20px;display:flex;align-items:center;gap:18px">
-      <img :src="player.avatarfull" :alt="player.personaname" style="width:64px;height:64px;border:2px solid var(--accent);flex-shrink:0" />
+      <img :src="player.avatarfull" :alt="player.personaname" width="184" height="184" loading="lazy" decoding="async" style="width:64px;height:64px;border:2px solid var(--accent);flex-shrink:0" />
       <div style="flex:1;min-width:0">
         <div style="font-family:var(--pixel);font-size:11px;color:var(--text);margin-bottom:6px">{{ player.personaname }}</div>
         <div style="font-size:12px;color:var(--text-dim);display:flex;gap:14px;flex-wrap:wrap">

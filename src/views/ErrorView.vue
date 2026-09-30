@@ -96,7 +96,7 @@ const ART = {
       </template>
     </svg>
 
-    <div class="err-title" :style="{ color: cfg.accent }">{{ t(cfg.titleKey) }}</div>
+    <h1 class="err-title" :style="{ color: cfg.accent }">{{ t(cfg.titleKey) }}</h1>
     <div class="err-body">{{ t(cfg.bodyKey) }}</div>
     <button class="err-back" @click="router.push('/dashboard')">{{ t('err.back') }}</button>
   </div>

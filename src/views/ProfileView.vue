@@ -150,7 +150,7 @@ onMounted(async () => {
       <!-- Hero -->
       <div class="pcard hero">
         <div class="deco-stars" />
-        <img :src="player.avatarfull" :alt="player.personaname" class="avatar-xl" />
+        <img :src="player.avatarfull" :alt="player.personaname" width="184" height="184" class="avatar-xl" />
         <div>
           <h1>{{ player.personaname }}</h1>
           <div class="subtitle">
@@ -223,7 +223,7 @@ onMounted(async () => {
             >
               <span style="font-family:var(--pixel);font-size:10px;color:var(--text-mute)">#{{ i + 1 }}</span>
               <div style="width:56px;height:28px;overflow:hidden;">
-                <img :src="gameHeaderUrl(game.appid)" :alt="game.name" style="width:100%;height:100%;object-fit:cover" loading="lazy" />
+                <img :src="gameHeaderUrl(game.appid)" :alt="game.name" width="460" height="215" style="width:100%;height:100%;object-fit:cover" loading="lazy" decoding="async" />
               </div>
               <span style="font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ game.name }}</span>
               <span style="font-family:var(--mono);font-size:12px;color:var(--accent)">{{ Math.floor(game.playtime_forever / 60) }}h</span>
@@ -257,7 +257,8 @@ onMounted(async () => {
               <img
                 v-if="!failedBadgeImages.has(badgeKey(badge))"
                 :src="badgeImageUrl(badge)"
-                loading="lazy"
+                width="80" height="80"
+                loading="lazy" decoding="async"
                 style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
                 :alt="badgeGameName(badge) || `Badge #${badge.badgeid}`"
                 @error="handleBadgeImgError($event, badge)"
