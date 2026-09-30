@@ -1,3 +1,13 @@
+# [1.2.0](https://github.com/Mvth1s/SteamFolio/compare/v1.1.0...v1.2.0) (2026-09-30)
+
+
+### Features
+
+* **seo:** add meta tags, Open Graph, JSON-LD and on-demand theme fonts ([10e696b](https://github.com/Mvth1s/SteamFolio/commit/10e696ba8b519b79011646db3afd28a462fa777e))
+* **seo:** add robots.txt, sitemap, llms.txt, web manifest and icons ([c0bd439](https://github.com/Mvth1s/SteamFolio/commit/c0bd43903742fde56cc9263e6a3d4ccadf362cf9))
+* **seo:** lazy-load route views and update meta tags per route ([15033ac](https://github.com/Mvth1s/SteamFolio/commit/15033ac284d06cd98b49e7bde3c5ed6b214df1fe))
+* **seo:** one h1 per view, breadcrumb nav and image dimensions ([bfbb7b1](https://github.com/Mvth1s/SteamFolio/commit/bfbb7b10b35236420b65117fe859dcba89ba5ed2))
+
 # [1.1.0](https://github.com/Mvth1s/SteamFolio/compare/v1.0.0...v1.1.0) (2026-06-23)
 
 
