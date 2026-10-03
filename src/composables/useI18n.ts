@@ -183,6 +183,12 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'cache.stale': 'Cached data may be more than 2 days old. Press Ctrl+F5 to force a refresh.',
     'cache.dismiss': 'dismiss',
 
+    'cookie.title': 'COOKIES',
+    'cookie.body': 'SteamFolio uses Google Analytics to measure its audience. These cookies are only set if you accept. You can change your mind anytime with the 🍪 button at the top.',
+    'cookie.accept': 'ACCEPT',
+    'cookie.refuse': 'DECLINE',
+    'cookie.settings': 'Cookie settings',
+
     // errors
     'err.404.title': '404 · NOT FOUND',
     'err.404.body': 'This page is hiding behind a chest in another zone. Try the sidebar.',
@@ -362,6 +368,12 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
 
     'cache.stale': 'Les données en cache peuvent avoir plus de 2 jours. Appuyez sur Ctrl+F5 pour forcer une mise à jour.',
     'cache.dismiss': 'ignorer',
+
+    'cookie.title': 'COOKIES',
+    'cookie.body': "SteamFolio utilise Google Analytics pour mesurer son audience. Ces cookies ne sont déposés que si vous acceptez. Vous pouvez changer d'avis à tout moment via le bouton 🍪 en haut.",
+    'cookie.accept': 'ACCEPTER',
+    'cookie.refuse': 'REFUSER',
+    'cookie.settings': 'Gestion des cookies',
 
     'err.404.title': '404 · INTROUVABLE',
     'err.404.body': "Cette page se cache dans un coffre d'une autre zone. Essayez la barre latérale.",

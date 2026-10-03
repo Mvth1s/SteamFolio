@@ -6,6 +6,7 @@ import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useTheme, SF_THEMES } from '@/composables/useTheme'
 import { useI18n } from '@/composables/useI18n'
 import { useSound } from '@/composables/useSound'
+import { useCookieConsent } from '@/composables/useCookieConsent'
 import type { ThemeKey } from '@/types/design'
 
 defineOptions({ name: 'TopBar' })
@@ -16,6 +17,7 @@ const { player } = usePlayerSummary()
 const { themeKey, setTheme } = useTheme()
 const { t, lang, setLang } = useI18n()
 const { click, open, muted, setMuted, setTheme: setSoundTheme } = useSound()
+const { openBanner } = useCookieConsent()
 
 const themeOpen = ref(false)
 const themeRef = ref<HTMLElement | null>(null)
@@ -90,6 +92,15 @@ function toggleLang() {
         :title="t('theme.label')"
         @click="toggleLang"
       >{{ lang.toUpperCase() }}</button>
+
+      <button
+        class="tb-btn"
+        :title="t('cookie.settings')"
+        :aria-label="t('cookie.settings')"
+        @click="openBanner(); click()"
+      >
+        <span style="font-size:14px">🍪</span>
+      </button>
 
       <div ref="themeRef" style="position:relative">
         <button class="tb-btn" :title="t('theme.label')" @click="themeOpen = !themeOpen; click()">
