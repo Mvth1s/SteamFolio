@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Mvth1s/SteamFolio/compare/v1.3.0...v1.4.0) (2026-10-03)
+
+
+### Features
+
+* **analytics:** add Google Analytics gtag.js tag ([f39a236](https://github.com/Mvth1s/SteamFolio/commit/f39a2369c229ac55aee5f159c05d052f0e6ccb67))
+
 # [1.3.0](https://github.com/Mvth1s/SteamFolio/compare/v1.2.0...v1.3.0) (2026-10-03)
 
 
