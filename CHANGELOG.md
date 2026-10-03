@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Mvth1s/SteamFolio/compare/v1.4.0...v1.5.0) (2026-10-03)
+
+
+### Features
+
+* **analytics:** load Google Analytics only after cookie consent ([8783a35](https://github.com/Mvth1s/SteamFolio/commit/8783a35f43d5f474bdb2b3659d1eebfed9085884))
+
 # [1.4.0](https://github.com/Mvth1s/SteamFolio/compare/v1.3.0...v1.4.0) (2026-10-03)
 
 
