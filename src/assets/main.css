@@ -1196,6 +1196,34 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 /* ============================================================
+   COOKIE CONSENT
+============================================================ */
+.sf-cookie {
+  position: fixed; right: 20px; bottom: 20px;
+  width: min(380px, calc(100vw - 32px));
+  background: var(--bg-navy);
+  border: 1px solid var(--accent-dim);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  padding: 16px 18px;
+  z-index: 9000;
+  animation: sf-pop 0.3s ease-out;
+}
+.sf-cookie-title {
+  font-family: var(--pixel); font-size: 9px; letter-spacing: 1px;
+  color: var(--accent);
+}
+.sf-cookie-body { margin: 10px 0 14px; font-size: 12px; color: var(--text-dim); }
+.sf-cookie-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sf-cookie-btn {
+  padding: 10px 8px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--line-soft);
+  font-family: var(--pixel); font-size: 8px; letter-spacing: 1px;
+  color: var(--text);
+}
+.sf-cookie-btn:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+/* ============================================================
    ANIMATIONS — fill bars on entry, card pulse
 ============================================================ */
 .pbar > i { transition: width 0.9s cubic-bezier(.4,.0,.2,1); }
@@ -1249,6 +1277,7 @@ a { color: var(--accent); text-decoration: none; }
   .app { grid-template-columns: 1fr; padding-bottom: 72px; }
   .sidebar { display: none; }
   .bottom-nav { display: block; }
+  .sf-cookie { left: 16px; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); width: auto; }
   .topbar { padding: 12px 16px; flex-wrap: wrap; }
   .topbar .search { display: none; }
   .page { padding: 16px 16px 32px; }

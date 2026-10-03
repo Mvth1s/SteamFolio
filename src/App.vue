@@ -8,6 +8,7 @@ import Particles from '@/components/ui/Particles.vue'
 import PageTransition from '@/components/ui/PageTransition.vue'
 import SearchPalette from '@/components/ui/SearchPalette.vue'
 import BottomNav from '@/components/ui/BottomNav.vue'
+import CookieBanner from '@/components/ui/CookieBanner.vue'
 import { usePlayerSummary } from '@/composables/usePlayerSummary'
 import { useTheme, SF_THEMES } from '@/composables/useTheme'
 import { useSound } from '@/composables/useSound'
@@ -162,5 +163,8 @@ function triggerKonami() {
 
     <!-- Mobile bottom nav -->
     <BottomNav />
+
+    <!-- Analytics consent -->
+    <CookieBanner v-if="!booting" />
   </div>
 </template>
