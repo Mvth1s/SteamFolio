@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Mvth1s/SteamFolio/compare/v1.2.0...v1.3.0) (2026-10-03)
+
+
+### Features
+
+* **seo:** add Google Search Console site verification meta tag ([7f9a569](https://github.com/Mvth1s/SteamFolio/commit/7f9a56931ba4e38622e74126b901cf46ae8b7d46))
+
 # [1.2.0](https://github.com/Mvth1s/SteamFolio/compare/v1.1.0...v1.2.0) (2026-09-30)
 
 
