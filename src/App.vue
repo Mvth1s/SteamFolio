@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import Topbar from '@/components/layout/Topbar.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import BootLoader from '@/components/ui/BootLoader.vue'
 import Particles from '@/components/ui/Particles.vue'
 import PageTransition from '@/components/ui/PageTransition.vue'
@@ -157,6 +158,7 @@ function triggerKonami() {
         <Topbar @search="openPalette" />
         <div class="page">
           <RouterView />
+          <AppFooter />
         </div>
       </main>
     </div>

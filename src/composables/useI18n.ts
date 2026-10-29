@@ -189,6 +189,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'cookie.refuse': 'DECLINE',
     'cookie.settings': 'Cookie settings',
 
+    'footer.legal': 'Legal notice',
+    'footer.privacy': 'Privacy policy',
+    'footer.credits': 'Personal, non-commercial project · Hosted by Vercel · Data from the Steam Web API, not affiliated with Valve.',
+
     // errors
     'err.404.title': '404 · NOT FOUND',
     'err.404.body': 'This page is hiding behind a chest in another zone. Try the sidebar.',
@@ -374,6 +378,10 @@ const SF_I18N: Record<LangKey, Record<string, string>> = {
     'cookie.accept': 'ACCEPTER',
     'cookie.refuse': 'REFUSER',
     'cookie.settings': 'Gestion des cookies',
+
+    'footer.legal': 'Mentions légales',
+    'footer.privacy': 'Politique de confidentialité',
+    'footer.credits': "Projet personnel non commercial · Hébergé par Vercel · Données issues de l'API Steam Web, non affilié à Valve.",
 
     'err.404.title': '404 · INTROUVABLE',
     'err.404.body': "Cette page se cache dans un coffre d'une autre zone. Essayez la barre latérale.",
