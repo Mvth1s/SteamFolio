@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/Mvth1s/SteamFolio/compare/v1.5.1...v1.5.2) (2026-10-29)
+
+
+### Bug Fixes
+
+* compléter les mentions légales ([#26](https://github.com/Mvth1s/SteamFolio/issues/26)) ([d4e859a](https://github.com/Mvth1s/SteamFolio/commit/d4e859aa7b7357e88b675945074b4f7214b1a517))
+
 ## [1.5.1](https://github.com/Mvth1s/SteamFolio/compare/v1.5.0...v1.5.1) (2026-10-29)
 
 
