@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/Mvth1s/SteamFolio/compare/v1.5.0...v1.5.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* **legal:** ajouter footer légal, mentions légales et confidentialité ([#23](https://github.com/Mvth1s/SteamFolio/issues/23)) ([#25](https://github.com/Mvth1s/SteamFolio/issues/25)) ([e65dd84](https://github.com/Mvth1s/SteamFolio/commit/e65dd84f67d1b812eae487d3f953daf273e26c85)), closes [#24](https://github.com/Mvth1s/SteamFolio/issues/24)
+
 # [1.5.0](https://github.com/Mvth1s/SteamFolio/compare/v1.4.0...v1.5.0) (2026-10-03)
 
 
