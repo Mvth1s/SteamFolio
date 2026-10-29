@@ -29,11 +29,12 @@ watch(() => route.hash, scrollToHash)
           <dt>Éditeur</dt>
           <dd>Mathis Aguado, particulier.</dd>
           <dt>Contact</dt>
-          <dd>TODO : adresse e-mail de contact à renseigner.</dd>
+          <dd><a href="mailto:mag.d3v+steamfolio@pm.me">mag.d3v+steamfolio@pm.me</a></dd>
           <dt>Hébergeur</dt>
           <dd>
-            Vercel Inc. — TODO : adresse postale et téléphone de l'hébergeur à reporter depuis
-            <a href="https://vercel.com/legal" target="_blank" rel="noopener noreferrer">vercel.com/legal</a>.
+            Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis. Contact :
+            <a href="mailto:privacy@vercel.com">privacy@vercel.com</a> (téléphone non communiqué par l'hébergeur).
+            Vercel est certifié EU-U.S. Data Privacy Framework.
           </dd>
           <dt>Crédits</dt>
           <dd>
@@ -66,8 +67,7 @@ watch(() => route.hash, scrollToHash)
             Avec votre accord uniquement, Google Analytics mesure l'audience (pages vues, provenance, type d'appareil)
             et dépose les cookies <code>_ga</code>, sans finalité publicitaire. Tant que vous n'avez pas accepté, le
             script n'est pas chargé. Base légale : votre consentement, redemandé au bout de 6 mois. Données traitées
-            par Google, qui peut les transférer hors de l'Union européenne. Durée de conservation : TODO : durée
-            configurée dans Google Analytics à renseigner.
+            par Google, qui peut les transférer hors de l'Union européenne. Durée de conservation : 2 mois.
           </dd>
           <dt>Autres services tiers</dt>
           <dd>
