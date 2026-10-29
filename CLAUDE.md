@@ -51,7 +51,7 @@ In development, a Vite plugin in `vite.config.ts` intercepts `/api/steam` reques
 - **`src/views/`** — one Vue component per route; fetches data on `onMounted` and owns its `loading`/`error` state.
 - **`src/types/steam.ts`** — shared TypeScript interfaces for Steam API response shapes.
 - **`src/utils/steamFormatters.ts`** — pure formatting helpers (playtime, dates, status label, sort/filter, icon URL). Unit-tested in `src/utils/__tests__/steamFormatters.spec.ts`.
-- **`src/router/index.ts`** — four routes: `/profile`, `/library`, `/achievements`, `/friends` (root redirects to `/profile`).
+- **`src/router/index.ts`** — four routes: `/profile`, `/library`, `/achievements`, `/friends` (root redirects to `/profile`), plus `/mentions-legales` (`LegalView`, legal notice + privacy policy, linked from `AppFooter` on every page).
 - **`src/App.vue`** — sets the browser favicon dynamically from the Steam profile avatar via `usePlayerSummary`.
 
 ### Styling

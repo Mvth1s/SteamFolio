@@ -70,6 +70,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/mentions-legales',
+      name: 'legal',
+      component: () => import('@/views/LegalView.vue'),
+      meta: {
+        title: 'Mentions légales et confidentialité | SteamFolio',
+        description: "Mentions légales, politique de confidentialité et cookies de SteamFolio : éditeur, hébergeur, données Steam affichées, Google Analytics et vos droits.",
+      },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFoundView.vue'),
