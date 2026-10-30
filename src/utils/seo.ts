@@ -1,6 +1,6 @@
 export const SITE_URL = 'https://steamfolio-mvtos.vercel.app'
 
-export const DEFAULT_TITLE = 'SteamFolio | Dashboard de profil Steam par Mathis Aguado'
+export const DEFAULT_TITLE = 'SteamFolio | Dashboard de profil Steam par Mvth1s'
 export const DEFAULT_DESCRIPTION =
   "Dashboard personnel branché sur l'API Steam : profil, bibliothèque de jeux, temps de jeu, succès débloqués et liste d'amis, en un coup d'œil."
 

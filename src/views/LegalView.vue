@@ -22,12 +22,14 @@ watch(() => route.hash, scrollToHash)
       <div class="pcard-h"><span class="label">MENTIONS LÉGALES</span></div>
       <div class="pcard-pad">
         <p>
-          SteamFolio est un projet personnel, gratuit et non commercial, édité par un particulier, Mathis Aguado.
-          Il ne vend rien et n'affiche aucune publicité.
+          Ce site est édité par Mvth1s, à titre personnel et non professionnel. Conformément à l'article 1-1, II de
+          la loi n° 2004-575 du 21 juin 2004 (LCEN), l'éditeur a choisi de conserver l'anonymat. Ses éléments
+          d'identification ont été communiqués à l'hébergeur.
+        </p>
+        <p>
+          SteamFolio est un projet personnel, gratuit et non commercial. Il ne vend rien et n'affiche aucune publicité.
         </p>
         <dl>
-          <dt>Éditeur</dt>
-          <dd>Mathis Aguado, particulier.</dd>
           <dt>Contact</dt>
           <dd><a href="mailto:mag.d3v+steamfolio@pm.me">mag.d3v+steamfolio@pm.me</a></dd>
           <dt>Hébergeur</dt>

@@ -30,7 +30,7 @@ const router = createRouter({
       component: () => import('@/views/ProfileView.vue'),
       meta: {
         title: 'Profil Steam | SteamFolio',
-        description: 'Profil Steam de Mathis Aguado : niveau, jeux mis en avant, badges et statistiques clés du compte.',
+        description: 'Profil Steam de Mvth1s : niveau, jeux mis en avant, badges et statistiques clés du compte.',
       },
     },
     {
